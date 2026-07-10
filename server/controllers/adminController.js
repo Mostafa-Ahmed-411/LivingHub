@@ -216,7 +216,9 @@ const getUsers = async (req, res, next) => {
     const { search, role, page = 1, limit = 20 } = req.query;
     const query = {};
 
-    if (role) query.role = role;
+    if (role) {
+      query.role = role === 'student' ? 'user' : role;
+    }
     if (search) {
       query.$or = [
         { fullName: { $regex: search, $options: 'i' } },
@@ -232,8 +234,16 @@ const getUsers = async (req, res, next) => {
       User.countDocuments(query)
     ]);
 
+    const mappedUsers = users.map(user => {
+      const u = user.toObject();
+      if (u.role === 'user') {
+        u.role = 'student';
+      }
+      return u;
+    });
+
     res.json({
-      users,
+      users: mappedUsers,
       pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) }
     });
   } catch (error) {

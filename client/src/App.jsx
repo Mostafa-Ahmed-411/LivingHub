@@ -1,8 +1,12 @@
 import React from "react";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import HomePage from "./pages/HomePage";
-import AuthPage from "./pages/AuthPage";
+import AuthLayout from "./layouts/AuthLayout";
+import LoginPage from "./pages/Auth/LoginPage";
+import RegisterPage from "./pages/Auth/RegisterPage";
+import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
+import VerifyOTPPage from "./pages/Auth/VerifyOTPPage";
 import StudentDashboard from "./pages/Student/StudentDashboard";
 import OwnerDashboard from "./pages/Owner/OwnerDashboard";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
@@ -61,7 +65,7 @@ export default function App() {
   const handleNavigate = (path, state = null) => {
     const routeMap = {
       home: "/",
-      auth: "/auth",
+      auth: "/auth/login",
       student: "/student",
       owner: "/owner",
       admin: "/admin",
@@ -84,7 +88,13 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage onNavigate={handleNavigate} />} />
         <Route path="/search" element={<SearchPage onNavigate={handleNavigate} />} />
-        <Route path="/auth" element={<AuthPage onNavigate={handleNavigate} />} />
+        <Route path="/auth" element={<AuthLayout onNavigate={handleNavigate} />}>
+          <Route index element={<Navigate to="/auth/login" replace />} />
+          <Route path="login" element={<LoginPage onNavigate={handleNavigate} />} />
+          <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="verify-otp" element={<VerifyOTPPage onNavigate={handleNavigate} />} />
+        </Route>
         <Route path="/student" element={<StudentDashboard onNavigate={handleNavigate} />} />
         <Route path="/owner" element={<OwnerDashboard onNavigate={handleNavigate} />} />
         <Route path="/admin" element={<AdminDashboard onNavigate={handleNavigate} />} />

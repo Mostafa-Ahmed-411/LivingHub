@@ -28,7 +28,14 @@ const getDashboardStats = async (req, res, next) => {
 const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).select('-password -refreshTokens');
-    res.json({ user });
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+    const userObj = user.toObject();
+    if (userObj.role === 'user') {
+      userObj.role = 'student';
+    }
+    res.json({ user: userObj });
   } catch (error) {
     next(error);
   }
@@ -36,13 +43,44 @@ const getProfile = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { fullName, email, phone } = req.body;
+    const {
+      fullName,
+      email,
+      phone,
+      firstName,
+      secondName,
+      thirdName,
+      fourthName,
+      gender,
+      governorate,
+      dateOfBirth,
+      isStudent,
+      college,
+      year,
+      occupation,
+      alternativePhone
+    } = req.body;
     const user = await User.findById(req.user._id);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
 
-    // Email/phone uniqueness is handled by Mongoose unique indexes (will throw 11000 handled by errorHandler)
     if (fullName) user.fullName = fullName;
     if (email) user.email = email.toLowerCase();
     if (phone) user.phone = phone;
+
+    if (firstName) user.firstName = firstName;
+    if (secondName) user.secondName = secondName;
+    if (thirdName !== undefined) user.thirdName = thirdName || undefined;
+    if (fourthName !== undefined) user.fourthName = fourthName || undefined;
+    if (gender) user.gender = gender;
+    if (governorate) user.governorate = governorate;
+    if (dateOfBirth) user.dateOfBirth = dateOfBirth;
+    if (isStudent !== undefined) user.isStudent = (isStudent === 'true' || isStudent === true || isStudent === 'on');
+    if (college !== undefined) user.college = college || undefined;
+    if (year !== undefined) user.year = year || undefined;
+    if (occupation !== undefined) user.occupation = occupation || undefined;
+    if (alternativePhone !== undefined) user.alternativePhone = alternativePhone || undefined;
 
     if (req.file) {
       user.profileImage = req.file.filename;
@@ -55,8 +93,21 @@ const updateProfile = async (req, res, next) => {
       user: {
         _id: user._id,
         fullName: user.fullName,
+        firstName: user.firstName,
+        secondName: user.secondName,
+        thirdName: user.thirdName,
+        fourthName: user.fourthName,
         email: user.email,
         phone: user.phone,
+        role: user.role === 'user' ? 'student' : user.role,
+        gender: user.gender,
+        governorate: user.governorate,
+        dateOfBirth: user.dateOfBirth,
+        isStudent: user.isStudent,
+        college: user.college,
+        year: user.year,
+        occupation: user.occupation,
+        alternativePhone: user.alternativePhone,
         profileImage: user.profileImage
       }
     });
