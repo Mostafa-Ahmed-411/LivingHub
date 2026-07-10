@@ -1,21 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Building2, Users, DollarSign, Eye, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import StatCard from "../../components/common/StatCard";
 import Btn from "../../components/common/Btn";
 import Badge from "../../components/common/Badge";
 import { revenueData, unitTypeData } from "../../data/mockData";
-
+import { ownerStats, recentBookings } from "../../data/ownerDashboardData";
 export default function OwnerOverview() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Building2} label="Active Listings" value="4" change={12} color="blue" />
-        <StatCard icon={Users} label="Current Tenants" value="7" change={5} color="green" />
-        <StatCard icon={DollarSign} label="Monthly Income" value="EGP 18.4K" change={8} color="amber" />
-        <StatCard icon={Eye} label="Profile Views" value="284" change={23} color="purple" />
-      </div>
+  {ownerStats.map((stat) => (
+    <StatCard
+      key={stat.id}
+      icon={stat.icon}
+      label={stat.label}
+      value={stat.value}
+      change={stat.change}
+      color={stat.color}
+    />
+  ))}
+</div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -75,7 +81,7 @@ export default function OwnerOverview() {
                 dataKey="value"
               >
                 {unitTypeData.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
+                  <Cell key={entry.name} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip
@@ -121,37 +127,8 @@ export default function OwnerOverview() {
               </tr>
             </thead>
             <tbody>
-              {[
-                {
-                  tenant: "Youssef Mahmoud",
-                  property: "Studio in Zamalek",
-                  date: "Jul 1, 2025",
-                  rent: "EGP 2,800",
-                  status: "Active"
-                },
-                {
-                  tenant: "Nada El-Sayed",
-                  property: "Room in Heliopolis",
-                  date: "Jun 15, 2025",
-                  rent: "EGP 1,800",
-                  status: "Active"
-                },
-                {
-                  tenant: "Omar Ashraf",
-                  property: "Apartment in Maadi",
-                  date: "Aug 1, 2025",
-                  rent: "EGP 4,200",
-                  status: "Pending"
-                },
-                {
-                  tenant: "Laila Karim",
-                  property: "Bed Space - Nasr City",
-                  date: "Jul 20, 2025",
-                  rent: "EGP 900",
-                  status: "Active"
-                }
-              ].map((row, i) => (
-                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+             {recentBookings.map((row) => (
+                <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
