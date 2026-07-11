@@ -80,7 +80,7 @@ export default function StudentOverview({ onNavigate, onTab }) {
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Btn variant="primary" size="sm" onClick={() => onTab("chats")}>
+              <Btn variant="primary" size="sm" onClick={() => onTab("messages")}>
                 <MessageSquare className="w-4 h-4" /> Message Landlord
               </Btn>
               <Btn variant="outline" size="sm" onClick={() => onTab("payments")}>

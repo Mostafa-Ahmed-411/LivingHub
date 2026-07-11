@@ -29,6 +29,22 @@ const unitSchema = new mongoose.Schema({
     street: String,
     nearestUniversity: String
   },
+  availableFrom: {
+    type: Date
+  },
+  availableTo: {
+    type: Date
+  },
+  distanceToUniversity: {
+    type: Number,
+    default: 1.0
+  },
+  rating: {
+    type: Number,
+    default: 4.5,
+    min: 1.0,
+    max: 5.0
+  },
   price: {
     type: Number,
     required: true,

@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
         </Btn>
 
         <Link
-          to="/auth/login"
+          to="/login"
           className="w-full flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 py-2 font-semibold"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Login

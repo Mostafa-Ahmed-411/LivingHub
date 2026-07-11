@@ -23,8 +23,8 @@ export default function LoginPage({ onNavigate }) {
 		setLoading(true);
 		setError(null);
 		try {
-			const user = await login(email, password);
-			onNavigate(user.role);
+			await login(email, password);
+			onNavigate("home");
 		} catch (err) {
 			console.log(err);
 			setError(err.response?.data?.message || "Invalid credentials");
@@ -38,13 +38,13 @@ export default function LoginPage({ onNavigate }) {
 			{/* Tab Selector Header */}
 			<div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-8">
 				<Link
-					to="/auth/login"
+					to="/login"
 					className="flex-1 py-2.5 text-center text-sm font-semibold rounded-lg transition-all bg-white shadow-sm text-blue-600"
 				>
 					Login
 				</Link>
 				<Link
-					to="/auth/register"
+					to="/register"
 					className="flex-1 py-2.5 text-center text-sm font-semibold rounded-lg transition-all text-gray-600 hover:text-gray-900"
 				>
 					Register
@@ -96,7 +96,7 @@ export default function LoginPage({ onNavigate }) {
 						<span className="text-sm text-gray-600">Remember me</span>
 					</label>
 					<Link
-						to="/auth/forgot-password"
+						to="/forgot-password"
 						className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
 					>
 						Forgot password?
@@ -114,15 +114,15 @@ export default function LoginPage({ onNavigate }) {
 					<ArrowRight className="w-4 h-4" />
 				</Btn>
 
-				<div className="relative flex items-center">
-					<div className="flex-1 border-t border-gray-200" />
-					<span className="px-4 text-xs text-gray-400 bg-white">
-						or continue with
-					</span>
-					<div className="flex-1 border-t border-gray-200" />
-				</div>
+					{/* <div className="relative flex items-center">
+						<div className="flex-1 border-t border-gray-200" />
+						<span className="px-4 text-xs text-gray-400 bg-white">
+							or continue with
+						</span>
+						<div className="flex-1 border-t border-gray-200" />
+					</div> */}
 
-				<div className="grid grid-cols-2 gap-3">
+				{/* <div className="grid grid-cols-2 gap-3">
 					<Btn type="button" variant="outline" className="w-full">
 						<svg className="w-4 h-4" viewBox="0 0 24 24">
 							<path
@@ -147,13 +147,13 @@ export default function LoginPage({ onNavigate }) {
 					<Btn type="button" variant="outline" className="w-full">
 						<Phone className="w-4 h-4 text-green-600" /> Mobile
 					</Btn>
-				</div>
+				</div> */}
 			</form>
 
 			<p className="mt-6 text-center text-sm text-gray-600">
 				Don't have an account?{" "}
 				<Link
-					to="/auth/register"
+					to="/register"
 					className="text-blue-600 font-bold hover:text-blue-700"
 				>
 					Register now

@@ -15,7 +15,7 @@ process.on("uncaughtException", (err) => {
 // Connect to Database
 connectDB();
 
-const PORT = process.env.PORT || 5001;
+const PORT = 5000;
 const server = http.createServer(app);
 
 // Initialize Socket.io

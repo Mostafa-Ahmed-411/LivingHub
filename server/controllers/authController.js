@@ -51,10 +51,10 @@ const signup = async (req, res, next) => {
 
 		const hashedPassword = await bcrypt.hash(password, 12);
 
-		const verificationCode = Math.floor(
-			100000 + Math.random() * 900000,
-		).toString();
-		console.log("verificationCode : ", verificationCode);
+		// const verificationCode = Math.floor(
+		// 	100000 + Math.random() * 900000,
+		// ).toString();
+		const verificationCode = "123456";
 		const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
 		let normalizedRole = role || "user";
@@ -176,7 +176,7 @@ const login = async (req, res, next) => {
 		const user = await User.findOne({ email: email.toLowerCase() });
 
 		if (!user) {
-			throw new AppError("Invalid email or password", 401);
+			throw new AppError("Invalid email or password.", 401);
 		}
 
 		if (user.accountStatus === "pending_verification") {
@@ -197,7 +197,7 @@ const login = async (req, res, next) => {
 
 		const isMatch = await bcrypt.compare(password, user.password);
 		if (!isMatch) {
-			throw new AppError("Invalid email or password", 401);
+			throw new AppError("Invalid email or password..", 401);
 		}
 
 		const accessToken = generateAccessToken(user);
@@ -212,7 +212,7 @@ const login = async (req, res, next) => {
 			sameSite: "strict",
 			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
-
+		console.log("user " + user.email + " entered login");
 		res.json({
 			accessToken,
 			user: {

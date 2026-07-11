@@ -8,6 +8,11 @@ import RegisterPage from "./pages/Auth/RegisterPage";
 import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import VerifyOTPPage from "./pages/Auth/VerifyOTPPage";
 import StudentDashboard from "./pages/Student/StudentDashboard";
+import StudentOverview from "./pages/Student/StudentOverview";
+import StudentUnits from "./pages/Student/StudentUnits";
+import RentalHistory from "./pages/RentalHistory";
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 import OwnerDashboard from "./pages/Owner/OwnerDashboard";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import UnitFormPage from "./pages/UnitFormPage";
@@ -23,7 +28,7 @@ function DemoNav({ current }) {
   const pages = [
     { id: "/", label: "Home" },
     { id: "/search", label: "Search" },
-    { id: "/auth", label: "Auth" },
+    { id: "/login", label: "Login" },
     { id: "/student", label: "Student" },
     { id: "/owner", label: "Owner" },
     { id: "/admin", label: "Admin" },
@@ -65,7 +70,11 @@ export default function App() {
   const handleNavigate = (path, state = null) => {
     const routeMap = {
       home: "/",
-      auth: "/auth/login",
+      auth: "/login",
+      login: "/login",
+      register: "/register",
+      "verify-account": "/verify-account",
+      "forgot-password": "/forgot-password",
       student: "/student",
       owner: "/owner",
       admin: "/admin",
@@ -88,14 +97,23 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage onNavigate={handleNavigate} />} />
         <Route path="/search" element={<SearchPage onNavigate={handleNavigate} />} />
-        <Route path="/auth" element={<AuthLayout onNavigate={handleNavigate} />}>
-          <Route index element={<Navigate to="/auth/login" replace />} />
-          <Route path="login" element={<LoginPage onNavigate={handleNavigate} />} />
-          <Route path="register" element={<RegisterPage />} />
-          <Route path="forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="verify-otp" element={<VerifyOTPPage onNavigate={handleNavigate} />} />
+        <Route element={<AuthLayout onNavigate={handleNavigate} />}>
+          <Route path="/login" element={<LoginPage onNavigate={handleNavigate} />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/verify-account" element={<VerifyOTPPage onNavigate={handleNavigate} />} />
         </Route>
-        <Route path="/student" element={<StudentDashboard onNavigate={handleNavigate} />} />
+        <Route path="/student" element={<StudentDashboard onNavigate={handleNavigate} />}>
+          <Route index element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="dashboard" element={<StudentOverview onNavigate={handleNavigate} onTab={(targetTab) => handleNavigate(`/student/${targetTab}`)} />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="my-units" element={<StudentUnits onNavigate={handleNavigate} />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="messages" element={<ChatPage compact={true} />} />
+          <Route path="rental-history" element={<RentalHistory />} />
+          <Route path="payments" element={<PaymentsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
         <Route path="/owner" element={<OwnerDashboard onNavigate={handleNavigate} />} />
         <Route path="/admin" element={<AdminDashboard onNavigate={handleNavigate} />} />
         <Route

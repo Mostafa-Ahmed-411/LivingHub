@@ -34,17 +34,10 @@ export default function VerifyOTPPage({ onNavigate }) {
     setError(null);
     try {
       await verifyOTP(identifier, otpCode);
-      
-      // Auto login if we have both credentials from the registration page
-      if (identifier && password) {
-        const user = await login(identifier, password);
-        onNavigate(user.role);
-      } else {
-        setSuccessMessage("Account verified successfully! You can now log in.");
-        setTimeout(() => {
-          navigate("/auth/login");
-        }, 2000);
-      }
+      setSuccessMessage("Account verified successfully! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Verification failed");
     } finally {
@@ -149,7 +142,7 @@ export default function VerifyOTPPage({ onNavigate }) {
       </p>
 
       <Link
-        to="/auth/login"
+        to="/login"
         className="flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 font-semibold"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Login
