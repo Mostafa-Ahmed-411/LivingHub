@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Building2,
   ChevronRight,
@@ -21,20 +21,68 @@ export default function DashboardLayout({
   userRole = "Student"
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  
+  // قراءة مباشرة من المتصفح لمنع أي كاش للبيانات القديمة الراجعة من السيرفر
+  const [localUser, setLocalUser] = useState(() => {
+    try {
+      const savedData = localStorage.getItem("clientData");
+      return savedData ? JSON.parse(savedData) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  // مراقبة مستمرة وصارمة لكل حركة أو تغيير تبويب (Tab) جوه الداشبورد لإجبار المكون على الاستماع والتحديث
+  useEffect(() => {
+    const checkUpdates = () => {
+      try {
+        const savedData = localStorage.getItem("clientData");
+        if (savedData) {
+          setLocalUser(JSON.parse(savedData));
+        } else if (authUser) {
+          setLocalUser(authUser);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    
+    checkUpdates();
+
+    window.addEventListener("storage", checkUpdates);
+    return () => window.removeEventListener("storage", checkUpdates);
+  }, [authUser, activeTab, title]); // إضافة activeTab و title تجبر الهيدر يفضل صاحي ويحدث نفسه أوتوماتيك مع كل نقلة صفحة
+
+  const handleAbsoluteLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("clientData");
+    localStorage.removeItem("frozenProfileData");
+    onNavigate("auth");
+    window.location.reload(); // تنظيف كامل وفوري للخروج من الأكونت علطول
+  };
 
   const getInitials = (name) => {
-    if (!name) return "";
+    if (!name) return "U";
     const parts = name.split(" ").filter(Boolean);
-    if (parts.length === 0) return "";
+    if (parts.length === 0) return "U";
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
 
-  const displayName = user
-    ? `${user.firstName || ""} ${user.secondName || ""}`.trim() || user.fullName
+  // 💡 الحيلة الذكية: فك التشفير واستخراج الصورة فوراً من حقل الـ occupation لو الـ profileImage العادي فاضي
+  const finalImage = localUser?.profileImage && !localUser.profileImage.includes("|||")
+    ? localUser.profileImage
+    : (localUser?.occupation && localUser.occupation.includes("|||") ? localUser.occupation.split("|||")[1] : "");
+
+  const cleanOccupation = localUser?.occupation && localUser.occupation.includes("|||")
+    ? localUser.occupation.split("|||")[0]
+    : (localUser?.occupation || "");
+
+  const displayName = localUser
+    ? `${localUser.firstName || ""} ${localUser.secondName || ""}`.trim() || localUser.fullName || localUser.name
     : "Ahmed Hassan";
-  const displayRole = user ? user.role : userRole;
+  const displayRole = localUser ? localUser.role : userRole;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -96,19 +144,15 @@ export default function DashboardLayout({
                   {item.label}
                 </span>
               )}
-              {!collapsed && item.badge > 0 && (
-                <span className="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {item.badge}
-                </span>
-              )}
             </button>
           ))}
         </nav>
 
         {/* Sidebar Footer */}
         <div className="px-3 py-4 border-t border-gray-100 space-y-0.5 flex-shrink-0">
+          {/* تصليح زرار الـ Sign Out للـ لأسفل ليقوم بالخروج الفوري الحقيقي وتنظيف الكاش كاملاً */}
           <button
-            onClick={() => onNavigate("home")}
+            onClick={handleAbsoluteLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer border-0 bg-transparent text-left"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
@@ -147,12 +191,23 @@ export default function DashboardLayout({
               <MessageSquare className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2.5 pl-3 border-l border-gray-200">
-              <div className="w-8 h-8 bg-blue-100 text-blue-700 font-bold rounded-lg flex items-center justify-center text-[10px]">
-                {getInitials(user?.fullName || displayName)}
-              </div>
+              
+              {/* عرض الصورة المشفرة من قاعدة البيانات بنجاح وثبات كامل في الهيدر والداشبورد */}
+              {finalImage ? (
+                <img
+                  src={finalImage}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-lg object-cover ring-2 ring-gray-100"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-blue-100 text-blue-700 font-bold rounded-lg flex items-center justify-center text-[10px]">
+                  {getInitials(displayName)}
+                </div>
+              )}
+
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-semibold text-gray-900 leading-tight">{displayName}</p>
-                <p className="text-xs text-gray-400 capitalize">{displayRole}</p>
+                <p className="text-xs text-gray-400 capitalize">{cleanOccupation || displayRole}</p>
               </div>
             </div>
           </div>

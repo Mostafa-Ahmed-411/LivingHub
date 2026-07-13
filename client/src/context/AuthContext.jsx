@@ -8,16 +8,21 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Auto-fetch profile on application load if accessToken exists
+  // تحديث الـ localStorage والـ State معاً عند جلب بيانات البروفايل تلقائياً
   useEffect(() => {
     const checkAuth = async () => {
       if (localStorage.getItem('accessToken')) {
         try {
           const res = await api.get('/user/dashboard/profile');
-          setUser(res.data.user);
+          if (res.data && res.data.user) {
+            setUser(res.data.user);
+            // حفظ وتحديث الكائن الكامل في الـ clientData لتقرأ منه صفحة البروفايل
+            localStorage.setItem('clientData', JSON.stringify(res.data.user));
+          }
         } catch (err) {
           console.error('Failed to auto-authenticate user:', err);
           localStorage.removeItem('accessToken');
+          localStorage.removeItem('clientData');
         }
       }
       setLoading(false);
@@ -28,7 +33,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const data = await loginAPI(email, password);
     localStorage.setItem('accessToken', data.accessToken);
-    setUser(data.user);
+    
+    if (data.user) {
+      setUser(data.user);
+      // حقن كائن المستخدم الكامل المليء ببيانات التسجيل داخل الـ clientData فوراً
+      localStorage.setItem('clientData', JSON.stringify(data.user));
+    }
+    
     return data.user;
   };
 
@@ -54,6 +65,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Failed logging out on server:', err);
     } finally {
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('clientData'); // تنظيف الداتا عند الخروج تماماً
       setUser(null);
     }
   };

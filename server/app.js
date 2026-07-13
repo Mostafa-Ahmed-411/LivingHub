@@ -1,3 +1,7 @@
+// حقن متغيرات البيئة الخاصة بـ JWT في أول سطر لتجنب خطأ secretOrPrivateKey
+process.env.JWT_SECRET = process.env.JWT_SECRET || "mySuperSecretFallbackKey123456!!!";
+process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "90d";
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -21,17 +25,17 @@ const app = express();
 // Security & Parsing middlewares
 app.use(helmet());
 app.use(
-	cors({
-		origin: [
-			process.env.CLIENT_URL || "http://localhost:3000",
-			"http://localhost:5173",
-			"http://localhost:5174",
-			"http://127.0.0.1:3000",
-			"http://127.0.0.1:5173",
-			"http://127.0.0.1:5174",
-		],
-		credentials: true,
-	}),
+    cors({
+        origin: [
+            process.env.CLIENT_URL || "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174",
+        ],
+        credentials: true,
+    }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -52,7 +56,7 @@ app.use("/api/notifications", notificationRoutes);
 
 // Catch unhandled routes
 app.all("*", (req, res, next) => {
-	next(new AppError(`Can't find ${req.originalUrl} on this server`, 404));
+    next(new AppError(`Can't find ${req.originalUrl} on this server`, 404));
 });
 
 // Centralized error handler
