@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart2,
   AlertCircle,
@@ -10,25 +10,34 @@ import {
   Shield,
   Settings
 } from "lucide-react";
+import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import AdminOverview from "./AdminOverview";
-import AdminPending from "./AdminPending";
-import AdminUsers from "./AdminUsers";
-import OwnerListings from "../Owner/OwnerListings";
-import PaymentsPage from "../PaymentsPage";
-import AdminAds from "./AdminAds";
-import OwnerAnalytics from "../Owner/OwnerAnalytics";
-import AdminAuditLogs from "./AdminAuditLogs";
-import SettingsPage from "../SettingsPage";
+import { getPendingUnits } from "../../api/adminService";
 
 export default function AdminDashboard({ onNavigate }) {
-  const [tab, setTab] = useState("overview");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    getPendingUnits()
+      .then((data) => {
+        if (data && data.units) {
+          setPendingCount(data.units.length);
+        }
+      })
+      .catch((err) => console.error("Error fetching pending count for sidebar badge:", err));
+  }, [location.pathname]); // Update badge count whenever path changes
+
+  // Get active tab ID from route path
+  const pathParts = location.pathname.split("/").filter(Boolean);
+  const currentTab = pathParts[1] || "overview";
 
   const navItems = [
     { id: "overview", label: "Overview", icon: BarChart2, badge: 0 },
-    { id: "pending", label: "Pending Approvals", icon: AlertCircle, badge: 12 },
+    { id: "pending", label: "Pending Approvals", icon: AlertCircle, badge: pendingCount },
     { id: "users", label: "Users", icon: Users, badge: 0 },
-    { id: "properties", label: "Properties", icon: Building2, badge: 0 },
+    { id: "units", label: "Units", icon: Building2, badge: 0 },
     { id: "payments", label: "Payments", icon: CreditCard, badge: 0 },
     { id: "ads", label: "Advertisements", icon: Zap, badge: 0 },
     { id: "reports", label: "Reports", icon: FileText, badge: 0 },
@@ -36,26 +45,23 @@ export default function AdminDashboard({ onNavigate }) {
     { id: "settings", label: "Settings", icon: Settings, badge: 0 }
   ];
 
-  const title = navItems.find((n) => n.id === tab)?.label || "Admin";
+  const activeItem = navItems.find((n) => n.id === currentTab) || navItems[0];
+  const title = activeItem.label;
+
+  const handleTabChange = (tabId) => {
+    navigate(`/admin/${tabId}`);
+  };
 
   return (
     <DashboardLayout
       title={title}
       navItems={navItems}
-      activeTab={tab}
-      onTabChange={setTab}
+      activeTab={activeItem.id}
+      onTabChange={handleTabChange}
       onNavigate={onNavigate}
-      userRole="Admin"
+      userRole="System Administrator"
     >
-      {tab === "overview" && <AdminOverview />}
-      {tab === "pending" && <AdminPending />}
-      {tab === "users" && <AdminUsers />}
-      {tab === "properties" && <OwnerListings onNavigate={onNavigate} />}
-      {tab === "payments" && <PaymentsPage />}
-      {tab === "ads" && <AdminAds />}
-      {tab === "reports" && <OwnerAnalytics />}
-      {tab === "audit" && <AdminAuditLogs />}
-      {tab === "settings" && <SettingsPage isAdmin={true} />}
+      <Outlet />
     </DashboardLayout>
   );
 }

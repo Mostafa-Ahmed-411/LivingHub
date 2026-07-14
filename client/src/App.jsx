@@ -14,7 +14,16 @@ import RentalHistory from "./pages/RentalHistory";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import OwnerDashboard from "./pages/Owner/OwnerDashboard";
+import OwnerOverview from "./pages/Owner/OwnerOverview";
+import OwnerListings from "./pages/Owner/OwnerListings";
+import OwnerAnalytics from "./pages/Owner/OwnerAnalytics";
+import OwnerIncome from "./pages/Owner/OwnerIncome";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import AdminOverview from "./pages/Admin/AdminOverview";
+import AdminPending from "./pages/Admin/AdminPending";
+import AdminUsers from "./pages/Admin/AdminUsers";
+import AdminAds from "./pages/Admin/AdminAds";
+import AdminAuditLogs from "./pages/Admin/AdminAuditLogs";
 import UnitFormPage from "./pages/UnitFormPage";
 import UnitDetailPage from "./pages/UnitDetailPage";
 import ChatPage from "./pages/ChatPage";
@@ -22,6 +31,7 @@ import CommunityPage from "./pages/CommunityPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import SearchPage from "./pages/SearchPage";
+import AboutPage from "./pages/AboutPage";
 
 function DemoNav({ current }) {
   const navigate = useNavigate();
@@ -84,7 +94,8 @@ export default function App() {
       community: "/community",
       notifications: "/notifications",
       payments: "/payments",
-      search: "/search"
+      search: "/search",
+      about: "/about"
     };
 
     const targetRoute = routeMap[path] || path;
@@ -97,6 +108,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage onNavigate={handleNavigate} />} />
         <Route path="/search" element={<SearchPage onNavigate={handleNavigate} />} />
+        <Route path="/about" element={<AboutPage onNavigate={handleNavigate} />} />
         <Route element={<AuthLayout onNavigate={handleNavigate} />}>
           <Route path="/login" element={<LoginPage onNavigate={handleNavigate} />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -114,8 +126,29 @@ export default function App() {
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
-        <Route path="/owner" element={<OwnerDashboard onNavigate={handleNavigate} />} />
-        <Route path="/admin" element={<AdminDashboard onNavigate={handleNavigate} />} />
+        <Route path="/owner" element={<OwnerDashboard onNavigate={handleNavigate} />}>
+          <Route index element={<Navigate to="/owner/dashboard" replace />} />
+          <Route path="dashboard" element={<OwnerOverview />} />
+          <Route path="add-unit" element={<UnitFormPage onNavigate={handleNavigate} embedded={true} />} />
+          <Route path="my-units" element={<OwnerListings onNavigate={handleNavigate} />} />
+          <Route path="analytics" element={<OwnerAnalytics />} />
+          <Route path="income" element={<OwnerIncome />} />
+          <Route path="chats" element={<ChatPage compact={true} />} />
+          <Route path="profile" element={<ProfilePage isOwner={true} />} />
+          <Route path="history" element={<RentalHistory isOwner={true} />} />
+        </Route>
+        <Route path="/admin" element={<AdminDashboard onNavigate={handleNavigate} />}>
+          <Route index element={<Navigate to="/admin/overview" replace />} />
+          <Route path="overview" element={<AdminOverview />} />
+          <Route path="pending" element={<AdminPending />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="units" element={<OwnerListings onNavigate={handleNavigate} />} />
+          <Route path="payments" element={<PaymentsPage />} />
+          <Route path="ads" element={<AdminAds />} />
+          <Route path="reports" element={<OwnerAnalytics />} />
+          <Route path="audit" element={<AdminAuditLogs />} />
+          <Route path="settings" element={<SettingsPage isAdmin={true} />} />
+        </Route>
         <Route
           path="/unit-form"
           element={

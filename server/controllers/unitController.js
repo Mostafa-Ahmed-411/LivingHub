@@ -1,4 +1,5 @@
 const Unit = require('../models/Unit');
+const Settings = require('../models/Settings');
 const AuditLog = require('../models/AuditLog');
 const AppError = require('../utils/AppError');
 
@@ -19,11 +20,33 @@ const addUnit = async (req, res, next) => {
 
     const images = req.files ? req.files.map(f => f.filename) : [];
 
+    // 1. Fetch Settings.maxFreeUnitsPerOwner
+    const settings = await Settings.findOne();
+    const maxFreeUnits = (settings && typeof settings.maxFreeUnitsPerOwner === 'number')
+      ? settings.maxFreeUnitsPerOwner
+      : 2;
+
+    // 2. Count the owner's current units where status === "available"
+    const publishedCount = await Unit.countDocuments({
+      ownerId: req.user._id,
+      status: 'available',
+      isActive: true,
+      isDeleted: { $ne: true }
+    });
+
+    // 3. Set status based on limit
+    let status = 'pending';
+    let message = 'Unit created and is pending admin approval.';
+    if (req.user.role === 'admin' || publishedCount < maxFreeUnits) {
+      status = 'available';
+      message = 'Unit published successfully.';
+    }
+
     const unit = await Unit.create({
       ownerId: req.user._id,
       unitType,
       listingType: unitType !== 'apartment' ? 'rent' : listingType,
-      specifications,
+      specifications: typeof specifications === 'string' ? JSON.parse(specifications) : specifications,
       bedsPerRoom,
       roomsPerApartment: unitType === 'apartment' ? roomsPerApartment : undefined,
       floorNumber,
@@ -31,7 +54,7 @@ const addUnit = async (req, res, next) => {
       price,
       description,
       images,
-      status: 'pending_payment'
+      status
     });
 
     await AuditLog.create({
@@ -40,10 +63,10 @@ const addUnit = async (req, res, next) => {
       targetId: unit._id,
       targetType: 'Unit',
       reason: 'Unit created',
-      previousData: { status: null, newStatus: 'pending_payment' }
+      previousData: { status: null, newStatus: status }
     });
 
-    res.status(201).json({ message: 'Unit created. Please complete the payment to proceed.', unit });
+    res.status(201).json({ message, unit });
   } catch (error) {
     next(error);
   }
@@ -80,7 +103,7 @@ const editUnit = async (req, res, next) => {
     const isRestricted = restrictedStatuses.includes(unit.status);
 
     const { unitType, listingType, specifications, bedsPerRoom, roomsPerApartment,
-            floorNumber, address, price, description } = req.body;
+            floorNumber, address, price, description, isActive } = req.body;
 
     if (isRestricted) {
       // Only allow description and images changes for rented/sold units
@@ -106,19 +129,20 @@ const editUnit = async (req, res, next) => {
         unit.unitType = unitType;
       }
       if (listingType !== undefined) unit.listingType = listingType;
-      if (specifications !== undefined) unit.specifications = specifications;
+      if (specifications !== undefined) unit.specifications = typeof specifications === 'string' ? JSON.parse(specifications) : specifications;
       if (bedsPerRoom !== undefined) unit.bedsPerRoom = bedsPerRoom;
       if (roomsPerApartment !== undefined) unit.roomsPerApartment = roomsPerApartment;
       if (floorNumber !== undefined) unit.floorNumber = floorNumber;
       if (address !== undefined) unit.address = typeof address === 'string' ? JSON.parse(address) : address;
       if (price !== undefined) unit.price = price;
       if (description !== undefined) unit.description = description;
+      if (isActive !== undefined) unit.isActive = (isActive === 'true' || isActive === true);
       if (req.files && req.files.length > 0) {
         unit.images = req.files.map(f => f.filename);
       }
 
       if (needsReApproval) {
-        unit.status = 'pending_approval';
+        unit.status = 'pending';
         await AuditLog.create({
           performedBy: req.user._id,
           action: 'status_change',
@@ -138,17 +162,18 @@ const editUnit = async (req, res, next) => {
   }
 };
 
-const deactivateUnit = async (req, res, next) => {
+const deleteUnit = async (req, res, next) => {
   try {
     const unit = await Unit.findById(req.params.id);
     if (!unit) {
       throw new AppError('Unit not found', 404);
     }
 
-    if (req.user.role !== 'admin' && unit.ownerId.toString() !== req.user._id.toString()) {
-      throw new AppError('You can only deactivate your own units', 403);
+    if (req.user.role !== 'admin') {
+      throw new AppError('Only admins can delete units', 403);
     }
 
+    unit.isDeleted = true;
     unit.isActive = false;
     await unit.save();
 
@@ -157,10 +182,10 @@ const deactivateUnit = async (req, res, next) => {
       action: 'status_change',
       targetId: unit._id,
       targetType: 'Unit',
-      reason: 'Unit deactivated by ' + (req.user.role === 'admin' ? 'admin' : 'owner')
+      reason: 'Unit deleted by admin'
     });
 
-    res.json({ message: 'Unit deactivated successfully' });
+    res.json({ message: 'Unit deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -212,4 +237,62 @@ const updateUnitStatus = async (req, res, next) => {
   }
 };
 
-module.exports = { addUnit, getUnit, editUnit, deactivateUnit, updateUnitStatus };
+const getFeaturedUnits = async (req, res, next) => {
+  try {
+    const featured = await Unit.find({
+      status: 'available',
+      isActive: true,
+      isDeleted: { $ne: true },
+      isFeatured: true,
+      featuredUntil: { $gt: new Date() }
+    })
+    .sort({ featuredAt: -1 })
+    .populate('ownerId', 'fullName profileImage');
+
+    res.json({ success: true, units: featured });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const rateUnit = async (req, res, next) => {
+  try {
+    const { rating } = req.body;
+    const numRating = Number(rating);
+
+    if (isNaN(numRating) || numRating < 1 || numRating > 5) {
+      throw new AppError('Rating must be a number between 1 and 5', 400);
+    }
+
+    const unit = await Unit.findById(req.params.id);
+    if (!unit) {
+      throw new AppError('Unit not found', 404);
+    }
+
+    const currentRating = unit.rating || 0;
+    const currentReviewsCount = unit.reviewsCount || 0;
+
+    const newReviewsCount = currentReviewsCount + 1;
+    let newRating;
+    if (currentReviewsCount === 0) {
+      newRating = numRating;
+    } else {
+      newRating = ((currentRating * currentReviewsCount) + numRating) / newReviewsCount;
+    }
+
+    unit.rating = Math.round(newRating * 10) / 10;
+    unit.reviewsCount = newReviewsCount;
+    await unit.save();
+
+    res.json({
+      success: true,
+      message: 'Unit rated successfully',
+      rating: unit.rating,
+      reviewsCount: unit.reviewsCount
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { addUnit, getUnit, editUnit, deleteUnit, updateUnitStatus, getFeaturedUnits, rateUnit };

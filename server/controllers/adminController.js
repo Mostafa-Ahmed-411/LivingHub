@@ -5,6 +5,7 @@ const Ad = require('../models/Ad');
 const AuditLog = require('../models/AuditLog');
 const Notification = require('../models/Notification');
 const AppError = require('../utils/AppError');
+const Settings = require('../models/Settings');
 
 // --- Dashboard Stats ---
 const getDashboardStats = async (req, res, next) => {
@@ -23,7 +24,7 @@ const getDashboardStats = async (req, res, next) => {
       Unit.aggregate([{ $group: { _id: '$unitType', count: { $sum: 1 } } }]),
       Unit.countDocuments({ status: 'rented' }),
       Unit.countDocuments({ status: 'available' }),
-      Unit.countDocuments({ status: 'pending_approval', isActive: true }),
+      Unit.countDocuments({ status: { $in: ['pending_approval', 'pending'] }, isActive: true }),
       Payment.countDocuments({ status: 'pending' })
     ]);
 
@@ -47,7 +48,7 @@ const getDashboardStats = async (req, res, next) => {
 const getPendings = async (req, res, next) => {
   try {
     const [pendingUnits, pendingPayments] = await Promise.all([
-      Unit.find({ status: 'pending_approval', isActive: true })
+      Unit.find({ status: { $in: ['pending_approval', 'pending'] }, isActive: true })
         .populate('ownerId', 'fullName email phone')
         .sort({ createdAt: 1 }),
       Payment.find({ status: 'pending' })
@@ -62,13 +63,24 @@ const getPendings = async (req, res, next) => {
   }
 };
 
+const getPendingUnits = async (req, res, next) => {
+  try {
+    const pendingUnits = await Unit.find({ status: { $in: ['pending_approval', 'pending'] }, isActive: true })
+      .populate('ownerId', 'fullName email phone')
+      .sort({ createdAt: 1 });
+
+    res.json({ success: true, units: pendingUnits });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const approveUnit = async (req, res, next) => {
   try {
-    // We use findOneAndUpdate with specific status to prevent double-processing (optimistic locking pattern)
     const unit = await Unit.findOneAndUpdate(
-      { _id: req.params.id, status: 'pending_approval' },
+      { _id: req.params.id, status: { $in: ['pending_approval', 'pending'] } },
       { status: 'available' },
-      { new: false } // return old doc to log previous state
+      { new: false }
     );
 
     if (!unit) {
@@ -86,7 +98,7 @@ const approveUnit = async (req, res, next) => {
     await Notification.create({
       userId: unit.ownerId,
       type: 'unit_approved',
-      message: 'Your unit has been approved and is now available.',
+      message: 'Your unit has been approved and is now live.',
       relatedEntityId: unit._id
     });
 
@@ -102,7 +114,7 @@ const rejectUnit = async (req, res, next) => {
     if (!reason) throw new AppError('Rejection reason is required', 400);
 
     const unit = await Unit.findOneAndUpdate(
-      { _id: req.params.id, status: 'pending_approval' },
+      { _id: req.params.id, status: { $in: ['pending_approval', 'pending'] } },
       { status: 'rejected', rejectionReason: reason },
       { new: false }
     );
@@ -345,9 +357,129 @@ const toggleAdStatus = async (req, res, next) => {
   }
 };
 
+const getFeatureRequests = async (req, res, next) => {
+  try {
+    const units = await Unit.find({ featureRequestStatus: 'pending', isActive: true, isDeleted: { $ne: true } })
+      .populate('ownerId', 'fullName email phone')
+      .sort({ featureRequestedAt: 1 });
+
+    res.json({ success: true, units });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const approveFeature = async (req, res, next) => {
+  try {
+    const unit = await Unit.findById(req.params.id);
+    if (!unit) {
+      throw new AppError('Unit not found', 404);
+    }
+
+    if (unit.featureRequestStatus !== 'pending') {
+      throw new AppError('No pending feature request found for this unit', 400);
+    }
+
+    unit.featureRequestStatus = 'approved';
+    unit.isFeatured = true;
+    unit.featuredAt = new Date();
+    unit.featuredUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    await unit.save();
+
+    await AuditLog.create({
+      performedBy: req.user._id,
+      action: 'approve_feature',
+      targetId: unit._id,
+      targetType: 'Unit',
+      reason: 'Feature request approved'
+    });
+
+    await Notification.create({
+      userId: unit.ownerId,
+      type: 'feature_approved',
+      message: 'Your request to feature your unit has been approved.',
+      relatedEntityId: unit._id
+    });
+
+    res.json({ success: true, message: 'Feature request approved successfully', unit });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const rejectFeature = async (req, res, next) => {
+  try {
+    const unit = await Unit.findById(req.params.id);
+    if (!unit) {
+      throw new AppError('Unit not found', 404);
+    }
+
+    if (unit.featureRequestStatus !== 'pending') {
+      throw new AppError('No pending feature request found for this unit', 400);
+    }
+
+    unit.featureRequestStatus = 'rejected';
+    await unit.save();
+
+    await AuditLog.create({
+      performedBy: req.user._id,
+      action: 'reject_feature',
+      targetId: unit._id,
+      targetType: 'Unit',
+      reason: 'Feature request rejected'
+    });
+
+    await Notification.create({
+      userId: unit.ownerId,
+      type: 'feature_rejected',
+      message: 'Your request to feature your unit has been rejected.',
+      relatedEntityId: unit._id
+    });
+
+    res.json({ success: true, message: 'Feature request rejected successfully', unit });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateSettings = async (req, res, next) => {
+  try {
+    const { maxFreeUnitsPerOwner } = req.body;
+    const parsedLimit = parseInt(maxFreeUnitsPerOwner, 10);
+    if (isNaN(parsedLimit) || parsedLimit <= 0) {
+      throw new AppError('maxFreeUnitsPerOwner must be a positive integer', 400);
+    }
+
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = new Settings({ maxFreeUnitsPerOwner: parsedLimit });
+    } else {
+      settings.maxFreeUnitsPerOwner = parsedLimit;
+    }
+    await settings.save();
+
+    res.json({ message: 'Settings updated successfully', settings });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getSettings = async (req, res, next) => {
+  try {
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = await Settings.create({ maxFreeUnitsPerOwner: 2 });
+    }
+    res.json({ settings });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getPendings,
+  getPendingUnits,
   approveUnit,
   rejectUnit,
   approvePayment,
@@ -357,5 +489,10 @@ module.exports = {
   flagUser,
   createAd,
   getAds,
-  toggleAdStatus
+  toggleAdStatus,
+  getFeatureRequests,
+  approveFeature,
+  rejectFeature,
+  updateSettings,
+  getSettings
 };

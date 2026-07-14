@@ -3,46 +3,69 @@ import { DollarSign, TrendingUp, AlertCircle, Download, Wallet } from "lucide-re
 import StatCard from "../../components/common/StatCard";
 import Btn from "../../components/common/Btn";
 import Badge from "../../components/common/Badge";
+import { getOwnerHistory } from "../../api/ownerService";
 
 export default function OwnerIncome() {
-  // 1. تصفير سجل الأرباح وجعله يبدأ بمصفوفة فارغة [] لأي مستخدم جديد
-  const [incomeHistory, setIncomeHistory] = useState(() => {
-    try {
-      const savedIncome = localStorage.getItem("owner_income_history");
-      return savedIncome ? JSON.parse(savedIncome) : [];
-    } catch (e) {
-      return [];
-    }
-  });
+  const [incomeHistory, setIncomeHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // حساب كروت الإحصائيات ديناميكيًا بناءً على المعاملات الفعلية
+  useEffect(() => {
+    getOwnerHistory()
+      .then((data) => {
+        const txs = (data || []).map(u => ({
+          id: u._id,
+          property: `${u.unitType.charAt(0).toUpperCase() + u.unitType.slice(1)} in ${u.address?.city || 'N/A'}`,
+          amount: u.price,
+          date: u.updatedAt ? new Date(u.updatedAt).toLocaleDateString() : 'N/A',
+          method: u.listingType === 'sale' ? 'Bank Transfer' : 'Vodafone Cash',
+          status: 'confirmed'
+        }));
+        setIncomeHistory(txs);
+      })
+      .catch((err) => {
+        console.error("Error fetching owner income history:", err);
+        try {
+          const savedIncome = localStorage.getItem("owner_income_history");
+          setIncomeHistory(savedIncome ? JSON.parse(savedIncome) : []);
+        } catch (e) {
+          setIncomeHistory([]);
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
   const hasIncome = incomeHistory.length > 0;
 
-  // إجمالي الأرباح المؤكدة (Confirmed)
   const totalEarned = incomeHistory
     .filter(tx => tx.status === "confirmed")
     .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
 
-  // الأرباح المعلقة المنتظرة التأكيد (Pending)
   const totalPending = incomeHistory
     .filter(tx => tx.status === "pending")
     .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
 
-  // أرباح الشهر الحالي (بافتراض فلترة التاريخ الحالي أو كحساب للمؤكد مؤخرًا)
   const thisMonthEarned = incomeHistory
-    .filter(tx => tx.status === "confirmed") // يمكنك لاحقًا الفلترة بالشهر والسنة بالظبط
+    .filter(tx => tx.status === "confirmed")
     .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+
+  if (loading && incomeHistory.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards - بتصفّر وتزيد ديناميكياً مع الاستخدام الحقيقي */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard icon={DollarSign} label="This Month" value={`EGP ${thisMonthEarned.toLocaleString()}`} change={hasIncome ? 8 : 0} color="green" />
         <StatCard icon={TrendingUp} label="Total Earned" value={`EGP ${totalEarned.toLocaleString()}`} change={hasIncome ? 15 : 0} color="blue" />
         <StatCard icon={AlertCircle} label="Pending" value={`EGP ${totalPending.toLocaleString()}`} color="amber" />
       </div>
 
-      {/* Payment History Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-semibold text-gray-900">Payment History</h3>
@@ -51,7 +74,6 @@ export default function OwnerIncome() {
           </Btn>
         </div>
 
-        {/* 2. حالة التصفير: لو المالك جديد ومفيش أي مستأجر دفع إيجار لسه */}
         {!hasIncome ? (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
@@ -59,11 +81,10 @@ export default function OwnerIncome() {
             </div>
             <h3 className="text-base font-semibold text-gray-900 mb-1">No payments received yet</h3>
             <p className="text-sm text-gray-500 max-w-xs">
-              Your financial logs are currently empty. When tenants submit payments for your units, they will show up here.
+              Your financial logs are currently empty. When tenants rent your units, their payments will show up here.
             </p>
           </div>
         ) : (
-          /* 3. حالة وجود بيانات: عرض جدول الإيرادات الفعلي بالملي */
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

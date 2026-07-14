@@ -26,6 +26,7 @@ const searchValidation = [
 ];
 
 router.get('/recommended', searchController.getRecommendedUnits);
+router.get('/stats', searchController.getStats);
 router.get('/', searchValidation, searchController.searchUnits);
 
 module.exports = router;

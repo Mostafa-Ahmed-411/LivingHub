@@ -1,13 +1,46 @@
-import React, { useState } from "react";
-import { Lock, Trash2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Lock, Trash2, Shield, Sliders } from "lucide-react";
 import Sel from "../components/common/Sel";
 import Inp from "../components/common/Inp";
 import Btn from "../components/common/Btn";
+import { getSettings, updateSettings } from "../api/adminService";
 
 export default function SettingsPage({ isAdmin = false }) {
   const [notifOn, setNotifOn] = useState(true);
   const [emailOn, setEmailOn] = useState(true);
   const [smsOn, setSmsOn] = useState(false);
+
+  // Admin Config state
+  const [maxFreeUnits, setMaxFreeUnits] = useState(2);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin) {
+      getSettings()
+        .then((data) => {
+          if (data && data.settings) {
+            setMaxFreeUnits(data.settings.maxFreeUnitsPerOwner);
+          }
+        })
+        .catch((err) => {
+          console.error("Error loading system settings:", err);
+        });
+    }
+  }, [isAdmin]);
+
+  const handleSaveAdminConfig = async (e) => {
+    e.preventDefault();
+    setSavingConfig(true);
+    try {
+      await updateSettings(maxFreeUnits);
+      alert("System configurations updated successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save system configurations.");
+    } finally {
+      setSavingConfig(false);
+    }
+  };
 
   function Toggle({ on, toggle }) {
     return (
@@ -35,8 +68,40 @@ export default function SettingsPage({ isAdmin = false }) {
         >
           Settings
         </h2>
-        <p className="text-sm text-gray-500">Manage your account preferences</p>
+        <p className="text-sm text-gray-500">
+          {isAdmin ? "Manage platform configuration & settings" : "Manage your account preferences"}
+        </p>
       </div>
+
+      {/* Admin System Configurations */}
+      {isAdmin && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Sliders className="w-5 h-5 text-blue-600" />
+            <h3 className="font-semibold text-gray-900">Unit Publishing Limit Config</h3>
+          </div>
+          <form onSubmit={handleSaveAdminConfig} className="space-y-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-2">
+                Define how many free listings a property owner/landlord can publish before their listings require manual approval.
+              </p>
+              <Inp
+                label="Maximum Free Listings per Landlord"
+                type="number"
+                min="1"
+                placeholder="e.g. 2"
+                value={maxFreeUnits}
+                onChange={(e) => setMaxFreeUnits(Number(e.target.value))}
+                icon={Shield}
+                required
+              />
+            </div>
+            <Btn variant="primary" type="submit" disabled={savingConfig}>
+              {savingConfig ? "Saving Config..." : "Save System Config"}
+            </Btn>
+          </form>
+        </div>
+      )}
 
       {/* Notifications Toggle Settings */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -96,18 +161,20 @@ export default function SettingsPage({ isAdmin = false }) {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
-        <h3 className="font-semibold text-red-600 mb-3">Danger Zone</h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-gray-900 text-sm">Delete Account</p>
-            <p className="text-xs text-gray-400">Permanently delete your account and all data</p>
+      {!isAdmin && (
+        <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
+          <h3 className="font-semibold text-red-600 mb-3">Danger Zone</h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900 text-sm">Delete Account</p>
+              <p className="text-xs text-gray-400">Permanently delete your account and all data</p>
+            </div>
+            <Btn variant="danger" size="sm">
+              <Trash2 className="w-4 h-4" /> Delete Account
+            </Btn>
           </div>
-          <Btn variant="danger" size="sm">
-            <Trash2 className="w-4 h-4" /> Delete Account
-          </Btn>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -24,15 +24,33 @@ const adValidation = [
 // All admin routes require admin role
 router.use(auth, checkRole('admin'));
 
+const settingsValidation = [
+  body('maxFreeUnitsPerOwner')
+    .isInt({ min: 1 })
+    .withMessage('maxFreeUnitsPerOwner must be a positive integer'),
+  validate
+];
+
+router.get('/settings', adminController.getSettings);
+router.patch('/settings', settingsValidation, adminController.updateSettings);
+
 // Stats & Pendings
 router.get('/stats', adminController.getDashboardStats);
 router.get('/pendings', adminController.getPendings);
+router.get('/units/pending', adminController.getPendingUnits);
 
 // Approvals / Rejections
 router.post('/units/:id/approve', adminController.approveUnit);
+router.patch('/units/:id/approve', adminController.approveUnit);
 router.post('/units/:id/reject', rejectValidation, adminController.rejectUnit);
+router.patch('/units/:id/reject', rejectValidation, adminController.rejectUnit);
 router.post('/payments/:id/approve', adminController.approvePayment);
 router.post('/payments/:id/reject', rejectValidation, adminController.rejectPayment);
+
+// Feature Request Management
+router.get('/units/feature-requests', adminController.getFeatureRequests);
+router.patch('/units/:id/approve-feature', adminController.approveFeature);
+router.patch('/units/:id/reject-feature', adminController.rejectFeature);
 
 // User Management
 router.get('/users', adminController.getUsers);

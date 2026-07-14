@@ -38,6 +38,7 @@ router.post(
   unitController.addUnit
 );
 
+router.get('/featured', unitController.getFeaturedUnits);
 router.get('/:id', unitController.getUnit);
 
 router.put(
@@ -52,8 +53,8 @@ router.put(
 router.delete(
   '/:id',
   auth,
-  checkRole('owner', 'admin'),
-  unitController.deactivateUnit
+  checkRole('admin'),
+  unitController.deleteUnit
 );
 
 router.put(
@@ -62,6 +63,12 @@ router.put(
   checkRole('owner', 'admin'),
   statusValidation,
   unitController.updateUnitStatus
+);
+
+router.post(
+  '/:id/rate',
+  auth,
+  unitController.rateUnit
 );
 
 module.exports = router;

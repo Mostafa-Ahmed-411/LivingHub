@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Zap,
   MapPin,
@@ -15,6 +15,8 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import PropertyCard from "../components/common/PropertyCard";
 import Btn from "../components/common/Btn";
+import CountUp from "../components/common/CountUp";
+import { getStatsAPI } from "../api/search";
 import { cities, properties, testimonials } from "../data/mockData";
 
 function Hero({ onNavigate }) {
@@ -104,52 +106,75 @@ function Hero({ onNavigate }) {
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+      {/* <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
         <div className="w-6 h-10 border-2 border-white/40 rounded-full flex justify-center pt-2">
           <div className="w-1.5 h-3 bg-white/60 rounded-full" />
         </div>
-      </div>
+      </div> */}
     </section>
   );
 }
 
 function Categories({ onNavigate }) {
+  const [categories, setCategories] = useState({
+    apartments: 3240,
+    studios: 1850,
+    rooms: 4120,
+    beds: 2670
+  });
+
+  useEffect(() => {
+    getStatsAPI()
+      .then((data) => {
+        if (data && data.success && data.categories) {
+          setCategories(data.categories);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching category stats:", err);
+      });
+  }, []);
+
   const cats = [
     {
       label: "Apartments",
       icon: Building2,
-      count: "3,240+",
+      count: categories.apartments,
       bg: "bg-blue-50 hover:bg-blue-100",
       border: "border-blue-100",
       iconBg: "bg-blue-600",
-      tc: "text-blue-700"
+      tc: "text-blue-700",
+      suffix: "+"
     },
     {
       label: "Studios",
       icon: Layers,
-      count: "1,850+",
+      count: categories.studios,
       bg: "bg-purple-50 hover:bg-purple-100",
       border: "border-purple-100",
       iconBg: "bg-purple-600",
-      tc: "text-purple-700"
+      tc: "text-purple-700",
+      suffix: "+"
     },
     {
       label: "Rooms",
       icon: HomeIcon,
-      count: "4,120+",
+      count: categories.rooms,
       bg: "bg-green-50 hover:bg-green-100",
       border: "border-green-100",
       iconBg: "bg-green-600",
-      tc: "text-green-700"
+      tc: "text-green-700",
+      suffix: "+"
     },
     {
       label: "Bed Spaces",
       icon: BedDouble,
-      count: "2,670+",
+      count: categories.beds,
       bg: "bg-amber-50 hover:bg-amber-100",
       border: "border-amber-100",
       iconBg: "bg-amber-500",
-      tc: "text-amber-700"
+      tc: "text-amber-700",
+      suffix: "+"
     }
   ];
 
@@ -180,7 +205,9 @@ function Categories({ onNavigate }) {
               <cat.icon className="w-6 h-6 text-white" />
             </div>
             <p className="font-semibold text-gray-900 mb-1">{cat.label}</p>
-            <p className={`text-sm font-semibold ${cat.tc}`}>{cat.count}</p>
+            <p className={`text-sm font-semibold ${cat.tc}`}>
+              <CountUp end={cat.count} suffix={cat.suffix} />
+            </p>
           </button>
         ))}
       </div>
@@ -238,11 +265,30 @@ function FeaturedUnits({ onNavigate }) {
 }
 
 function StatsStrip() {
+  const [stats, setStats] = useState({
+    verifiedUnits: 15000,
+    happyStudents: 50000,
+    egyptianCities: 12,
+    satisfactionRate: 98
+  });
+
+  useEffect(() => {
+    getStatsAPI()
+      .then((data) => {
+        if (data && data.success && data.stats) {
+          setStats(data.stats);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching stats:", err);
+      });
+  }, []);
+
   const items = [
-    { value: "15,000+", label: "Verified Units" },
-    { value: "50,000+", label: "Happy Students" },
-    { value: "12", label: "Egyptian Cities" },
-    { value: "98%", label: "Satisfaction Rate" }
+    { value: stats.verifiedUnits, label: "Verified Units", suffix: "+" },
+    { value: stats.happyStudents, label: "Happy Students", suffix: "+" },
+    { value: stats.egyptianCities, label: "Egyptian Cities", suffix: "" },
+    { value: stats.satisfactionRate, label: "Satisfaction Rate", suffix: "%" }
   ];
 
   return (
@@ -255,7 +301,7 @@ function StatsStrip() {
                 className="text-4xl font-extrabold text-white mb-1"
                 style={{ fontFamily: "'Poppins', sans-serif" }}
               >
-                {s.value}
+                <CountUp end={s.value} suffix={s.suffix} />
               </p>
               <p className="text-blue-200 text-sm font-medium">{s.label}</p>
             </div>

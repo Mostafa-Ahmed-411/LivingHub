@@ -45,6 +45,10 @@ const unitSchema = new mongoose.Schema({
     min: 1.0,
     max: 5.0
   },
+  reviewsCount: {
+    type: Number,
+    default: 0
+  },
   price: {
     type: Number,
     required: true,
@@ -65,8 +69,56 @@ const unitSchema = new mongoose.Schema({
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
+  },
+  featureRequestStatus: {
+    type: String,
+    enum: ['none', 'pending', 'approved', 'rejected'],
+    default: 'none'
+  },
+  featureRequestedAt: Date,
+  featuredAt: Date,
+  featuredUntil: Date
 }, { timestamps: true });
+
+unitSchema.set('toJSON', {
+  virtuals: true,
+  transform: (doc, ret) => {
+    ret.isFeatured = !!(ret.isFeatured && ret.featuredUntil && new Date(ret.featuredUntil) > new Date());
+    if (ret.images && Array.isArray(ret.images)) {
+      ret.images = ret.images.map(img => {
+        if (img && !img.startsWith('http')) {
+          return `http://localhost:5000/uploads/units/${img}`;
+        }
+        return img;
+      });
+    }
+    return ret;
+  }
+});
+
+unitSchema.set('toObject', {
+  virtuals: true,
+  transform: (doc, ret) => {
+    ret.isFeatured = !!(ret.isFeatured && ret.featuredUntil && new Date(ret.featuredUntil) > new Date());
+    if (ret.images && Array.isArray(ret.images)) {
+      ret.images = ret.images.map(img => {
+        if (img && !img.startsWith('http')) {
+          return `http://localhost:5000/uploads/units/${img}`;
+        }
+        return img;
+      });
+    }
+    return ret;
+  }
+});
 
 unitSchema.index({ status: 1, isActive: 1 });
 unitSchema.index({ ownerId: 1 });

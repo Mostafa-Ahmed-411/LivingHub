@@ -20,6 +20,10 @@ process.on("uncaughtException", (err) => {
 // Connect to Database
 connectDB();
 
+// Start background expiry jobs
+const { startFeaturedExpiryJob } = require("./utils/cronJobs");
+startFeaturedExpiryJob();
+
 // جعل البورت يقرأ من الـ .env أو 5000 كقيمة افتراضية
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);

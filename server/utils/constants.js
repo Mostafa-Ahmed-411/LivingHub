@@ -12,7 +12,9 @@ const UNIT_STATUSES = [
   'available',
   'rented',
   'sold',
-  'rejected'
+  'rejected',
+  'pending',
+  'deleted'
 ];
 
 const PAYMENT_METHODS = ['vodafone_cash', 'instapay', 'bank_transfer', 'online_gateway'];
@@ -25,7 +27,9 @@ const NOTIFICATION_TYPES = [
   'unit_rejected',
   'payment_confirmed',
   'payment_rejected',
-  'booking_confirmed'
+  'booking_confirmed',
+  'feature_approved',
+  'feature_rejected'
 ];
 
 const AUDIT_ACTIONS = [
@@ -36,7 +40,10 @@ const AUDIT_ACTIONS = [
   'ban_user',
   'unban_user',
   'flag_user',
-  'status_change'
+  'status_change',
+  'request_feature',
+  'approve_feature',
+  'reject_feature'
 ];
 
 const AD_LOCATIONS = ['home', 'search', 'dashboard'];

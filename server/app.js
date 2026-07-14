@@ -19,6 +19,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const userDashboardRoutes = require("./routes/userDashboardRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const ownerUnitRoutes = require("./routes/ownerUnitRoutes");
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/units", unitRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/owner/dashboard", ownerDashboardRoutes);
+app.use("/api/owner/units", ownerUnitRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user/dashboard", userDashboardRoutes);
 app.use("/api/chat", chatRoutes);

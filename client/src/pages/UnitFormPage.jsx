@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import {
   MapPin,
   BookOpen,
@@ -16,49 +17,116 @@ import {
 import Inp from "../components/common/Inp";
 import Btn from "../components/common/Btn";
 import { cities } from "../data/mockData";
+import { createUnit, updateUnit } from "../api/ownerService";
 
 export default function UnitFormPage({ onNavigate, embedded = false }) {
+  const location = useLocation();
+  const editingUnit = location.state || null;
+
   const [step, setStep] = useState(1);
   const fileInputRef1 = useRef(null);
   const fileInputRef2 = useRef(null);
 
   // الخطوة 1: البيانات الأساسية
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("Studio");
-  const [listingFor, setListingFor] = useState("Rent");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState(editingUnit?.title || "");
+  const [type, setType] = useState(
+    editingUnit?.unitType
+      ? (editingUnit.unitType.charAt(0).toUpperCase() + editingUnit.unitType.slice(1))
+      : "Studio"
+  );
+  const [listingFor, setListingFor] = useState(
+    editingUnit?.listingType === 'sale' ? 'Sale' : 'Rent'
+  );
+  const [description, setDescription] = useState(editingUnit?.description || "");
 
   // الخطوة 2: الموقع الجغرافي
-  const [governorate, setGovernorate] = useState("Cairo");
-  const [district, setDistrict] = useState("");
-  const [address, setAddress] = useState("");
-  const [university, setUniversity] = useState("");
+  const [governorate, setGovernorate] = useState(editingUnit?.address?.governorate || "Cairo");
+  const [district, setDistrict] = useState(editingUnit?.address?.city || "");
+  const [address, setAddress] = useState(editingUnit?.address?.street || "");
+  const [university, setUniversity] = useState(editingUnit?.address?.nearestUniversity || "");
 
   // الخطوة 3: تفاصيل الغرف والأسرة
-  const [beds, setBeds] = useState(1);
-  const [roomBeds, setRoomBeds] = useState(2);
-  const [aptPeople, setAptPeople] = useState(4);
-  const [baths, setBaths] = useState(1);
-  const [area, setArea] = useState(45);
-  const [floor, setFloor] = useState(3);
-  const [gasType, setGasType] = useState("Natural Gas");
-  const [includesWater, setIncludesWater] = useState(true);
-  const [includesGas, setIncludesGas] = useState(false);
-  const [includesElectricity, setIncludesElectricity] = useState(false);
+  const [beds, setBeds] = useState(editingUnit?.roomsPerApartment || editingUnit?.bedsPerRoom || 1);
+  const [roomBeds, setRoomBeds] = useState(editingUnit?.bedsPerRoom || 2);
+  const [aptPeople, setAptPeople] = useState(editingUnit?.specifications?.aptPeople || 4);
+  const [baths, setBaths] = useState(editingUnit?.specifications?.baths || 1);
+  const [area, setArea] = useState(editingUnit?.specifications?.area || 45);
+  const [floor, setFloor] = useState(editingUnit?.floorNumber || 3);
+  const [gasType, setGasType] = useState(editingUnit?.specifications?.gasType || "Natural Gas");
+  const [includesWater, setIncludesWater] = useState(
+    editingUnit?.specifications?.includesWater !== false
+  );
+  const [includesGas, setIncludesGas] = useState(
+    !!editingUnit?.specifications?.includesGas
+  );
+  const [includesElectricity, setIncludesElectricity] = useState(
+    !!editingUnit?.specifications?.includesElectricity
+  );
+
+  // Amenities states (default checked)
+  const [fridge, setFridge] = useState(
+    editingUnit?.specifications?.amenities?.shared?.fridge !== false
+  );
+  const [washingMachine, setWashingMachine] = useState(
+    editingUnit?.specifications?.amenities?.shared?.washingMachine !== false
+  );
+  const [sharedBathroom, setSharedBathroom] = useState(
+    editingUnit?.specifications?.amenities?.shared?.sharedBathroom !== false
+  );
+  const [sharedKitchen, setSharedKitchen] = useState(
+    editingUnit?.specifications?.amenities?.shared?.sharedKitchen !== false
+  );
+  const [heater, setHeater] = useState(
+    editingUnit?.specifications?.amenities?.shared?.heater !== false
+  );
+
+  const [windowOpt, setWindowOpt] = useState(
+    editingUnit?.specifications?.amenities?.room?.window !== false
+  );
+  const [ac, setAc] = useState(
+    editingUnit?.specifications?.amenities?.room?.ac !== false
+  );
+  const [tvScreen, setTvScreen] = useState(
+    editingUnit?.specifications?.amenities?.room?.tvScreen !== false
+  );
+  const [wardrobe, setWardrobe] = useState(
+    editingUnit?.specifications?.amenities?.room?.wardrobe !== false
+  );
+
+  const [wifi, setWifi] = useState(
+    editingUnit?.specifications?.amenities?.building?.wifi !== false
+  );
+  const [cleaner, setCleaner] = useState(
+    editingUnit?.specifications?.amenities?.building?.cleaner !== false
+  );
+  const [security, setSecurity] = useState(
+    editingUnit?.specifications?.amenities?.building?.security !== false
+  );
+  const [securityCameras, setSecurityCameras] = useState(
+    editingUnit?.specifications?.amenities?.building?.securityCameras !== false
+  );
 
   // الخطوة 4: السعر وفترة الإيجار
-  const [price, setPrice] = useState("");
-  const [deposit, setDeposit] = useState("");
-  const [availFrom, setAvailFrom] = useState("");
-  const [availTo, setAvailTo] = useState("");
+  const [price, setPrice] = useState(editingUnit?.price || "");
+  const [deposit, setDeposit] = useState(editingUnit?.specifications?.deposit || "");
+  const [availFrom, setAvailFrom] = useState(
+    editingUnit?.availableFrom ? new Date(editingUnit.availableFrom).toISOString().split('T')[0] : ""
+  );
+  const [availTo, setAvailTo] = useState(
+    editingUnit?.availableTo ? new Date(editingUnit.availableTo).toISOString().split('T')[0] : ""
+  );
 
   // الخطوة 5: ألبوم الصور والمعاينة
-  const [coverImage1, setCoverImage1] = useState("");
-  const [coverImage2, setCoverImage2] = useState("");
+  const [coverImage1, setCoverImage1] = useState(editingUnit?.images?.[0] || "");
+  const [coverImage2, setCoverImage2] = useState(editingUnit?.images?.[1] || "");
+  const [imageFile1, setImageFile1] = useState(null);
+  const [imageFile2, setImageFile2] = useState(null);
 
   const handleImageUpload = (e, index) => {
     const file = e.target.files[0];
     if (file) {
+      if (index === 1) setImageFile1(file);
+      if (index === 2) setImageFile2(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         if (index === 1) setCoverImage1(reader.result);
@@ -68,49 +136,177 @@ export default function UnitFormPage({ onNavigate, embedded = false }) {
     }
   };
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, 5));
+  const validateStep = (currentStep) => {
+    switch (currentStep) {
+      case 1:
+        if (!title.trim()) {
+          alert("Please enter a title for the listing.");
+          return false;
+        }
+        if (!description.trim()) {
+          alert("Please enter a detailed description.");
+          return false;
+        }
+        return true;
+      case 2:
+        if (!district.trim()) {
+          alert("Please enter the city or district.");
+          return false;
+        }
+        if (!address.trim()) {
+          alert("Please enter the full address details.");
+          return false;
+        }
+        return true;
+      case 3:
+        if (type === "Apartment" && (!area || Number(area) <= 0)) {
+          alert("Please enter a valid total area (m²).");
+          return false;
+        }
+        return true;
+      case 4:
+        if (!price || Number(price) <= 0) {
+          alert("Please enter a valid monthly rent price.");
+          return false;
+        }
+        if (!availFrom) {
+          alert("Please select the date from which the property is available.");
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const nextStep = () => {
+    if (validateStep(step)) {
+      setStep((s) => Math.min(s + 1, 5));
+    }
+  };
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!title || !price || !district) {
       alert("يرجى ملء الحقول الإلزامية الأساسية قبل إتمام حفظ العقار.");
       return;
     }
 
-    const newProperty = {
-      id: Date.now(),
-      title,
-      unitType: type,
-      type,
-      listingFor,
-      description,
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("unitType", type.toLowerCase());
+    formData.append("listingType", listingFor.toLowerCase());
+    formData.append("description", description);
+    formData.append("price", price);
+    formData.append("floorNumber", floor);
+
+    const addressObj = {
       governorate,
-      district,
-      location: `${district}, ${governorate}`,
-      address,
-      university,
-      bedsCount: type === "Apartment" ? beds : type === "Bed" || type === "Studio" ? roomBeds : beds,
-      roomsCount: type === "Apartment" ? beds : 1,
-      bathroomsCount: baths,
-      status: "Active",
-      price: Number(price),
-      rentPrice: price,
-      depositPrice: deposit,
-      deposit: Number(deposit),
-      available: true,
-      views: 0,
-      image: coverImage1 || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80",
-      image2: coverImage2 || ""
+      city: district,
+      street: address,
+      nearestUniversity: university
     };
+    formData.append("address", JSON.stringify(addressObj));
+
+    const specificationsObj = {
+      deposit,
+      baths,
+      area,
+      aptPeople,
+      gasType,
+      includesWater,
+      includesGas,
+      includesElectricity,
+      amenities: {
+        shared: {
+          fridge,
+          washingMachine,
+          sharedBathroom,
+          sharedKitchen,
+          heater
+        },
+        room: {
+          window: windowOpt,
+          ac,
+          tvScreen,
+          wardrobe
+        },
+        building: {
+          wifi,
+          cleaner,
+          security,
+          securityCameras
+        }
+      }
+    };
+    formData.append("specifications", JSON.stringify(specificationsObj));
+
+    if (type === "Apartment") {
+      formData.append("roomsPerApartment", beds);
+    } else if (type === "Room") {
+      formData.append("bedsPerRoom", beds);
+    } else if (type === "Bed" || type === "Studio") {
+      formData.append("bedsPerRoom", roomBeds);
+    }
+
+    if (availFrom) formData.append("availableFrom", availFrom);
+    if (availTo) formData.append("availableTo", availTo);
+
+    if (imageFile1) {
+      formData.append("images", imageFile1);
+    }
+    if (imageFile2) {
+      formData.append("images", imageFile2);
+    }
 
     try {
-      const existingProperties = JSON.parse(localStorage.getItem("owner_properties") || "[]");
-      localStorage.setItem("owner_properties", JSON.stringify([newProperty, ...existingProperties]));
+      if (editingUnit) {
+        await updateUnit(editingUnit._id || editingUnit.id, formData);
+        alert("Unit updated successfully!");
+      } else {
+        await createUnit(formData);
+        alert("Unit added successfully!");
+      }
       window.dispatchEvent(new Event("storage"));
-      if (typeof onNavigate === "function") onNavigate("owner");
+      if (typeof onNavigate === "function") onNavigate("/owner/my-units");
     } catch (err) {
-      console.error("Error saving unit data:", err);
+      console.error("Error saving unit data to server:", err);
+      alert("Failed to submit unit to server. Saving locally instead.");
+
+      try {
+        const newProperty = {
+          id: Date.now(),
+          title,
+          unitType: type,
+          type,
+          listingFor,
+          description,
+          governorate,
+          district,
+          location: `${district}, ${governorate}`,
+          address,
+          university,
+          bedsCount: type === "Apartment" ? beds : type === "Bed" || type === "Studio" ? roomBeds : beds,
+          roomsCount: type === "Apartment" ? beds : 1,
+          bathroomsCount: baths,
+          status: "Active",
+          price: Number(price),
+          rentPrice: price,
+          depositPrice: deposit,
+          deposit: Number(deposit),
+          available: true,
+          views: 0,
+          image: coverImage1 || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80",
+          image2: coverImage2 || ""
+        };
+        const existingProperties = JSON.parse(localStorage.getItem("owner_properties") || "[]");
+        localStorage.setItem("owner_properties", JSON.stringify([newProperty, ...existingProperties]));
+        window.dispatchEvent(new Event("storage"));
+        if (typeof onNavigate === "function") onNavigate("/owner/my-units");
+      } catch (localErr) {
+        console.error("Local fallback save failed:", localErr);
+      }
     }
   };
 
@@ -131,7 +327,7 @@ export default function UnitFormPage({ onNavigate, embedded = false }) {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-extrabold text-gray-900 mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Add New Listing
+              {editingUnit ? "Edit Listing" : "Add New Listing"}
             </h2>
             <p className="text-sm text-gray-500">مرحلة {step} من 5 لتجهيز ونشر العقار</p>
           </div>
@@ -237,6 +433,80 @@ export default function UnitFormPage({ onNavigate, embedded = false }) {
                 </div>
               </div>
             </div>
+
+            {/* Amenities & Services */}
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+              <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wider">Amenities & Services</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50/50 p-4 rounded-xl border border-gray-200/50">
+                {/* Shared Amenities */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block pb-1 border-b border-gray-100">Shared Amenities</span>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={fridge} onChange={(e) => setFridge(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Fridge</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={washingMachine} onChange={(e) => setWashingMachine(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Washing Machine</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={sharedBathroom} onChange={(e) => setSharedBathroom(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Shared Bathroom</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={sharedKitchen} onChange={(e) => setSharedKitchen(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Shared Kitchen</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={heater} onChange={(e) => setHeater(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Heater</span>
+                  </label>
+                </div>
+
+                {/* Room Amenities */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block pb-1 border-b border-gray-100">Room Amenities</span>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={windowOpt} onChange={(e) => setWindowOpt(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Window</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={ac} onChange={(e) => setAc(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">AC</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={tvScreen} onChange={(e) => setTvScreen(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">TV Screen</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={wardrobe} onChange={(e) => setWardrobe(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Wardrobe</span>
+                  </label>
+                </div>
+
+                {/* Building Services */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block pb-1 border-b border-gray-100">Building Services</span>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={wifi} onChange={(e) => setWifi(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">WiFi</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={cleaner} onChange={(e) => setCleaner(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Cleaner</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={security} onChange={(e) => setSecurity(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Security</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={securityCameras} onChange={(e) => setSecurityCameras(e.target.checked)} className="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600" />
+                    <span className="text-xs font-bold text-gray-600">Security Cameras</span>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -287,7 +557,7 @@ export default function UnitFormPage({ onNavigate, embedded = false }) {
               <Btn variant="primary" onClick={nextStep} className="flex-1 justify-center">التالي <ChevronRight className="w-4 h-4" /></Btn>
             ) : (
               <Btn variant="primary" size="lg" className="flex-1 justify-center" type="button" onClick={handleSubmit}>
-                <CheckCircle className="w-4 h-4" /> نشر وحفظ الوحدة الآن
+                <CheckCircle className="w-4 h-4" /> {editingUnit ? "حفظ التعديلات ونشر العقار" : "نشر وحفظ الوحدة الآن"}
               </Btn>
             )}
           </div>

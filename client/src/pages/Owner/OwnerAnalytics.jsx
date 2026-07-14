@@ -13,18 +13,31 @@ import {
 import { Eye, Users, Calendar, TrendingUp } from "lucide-react";
 import StatCard from "../../components/common/StatCard";
 
-export default function OwnerAnalytics() {
-  // 1. قراءة العقارات الحقيقية المضافة من الـ localStorage لربط الحساب
-  const [properties, setProperties] = useState(() => {
-    try {
-      const saved = localStorage.getItem("owner_properties");
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
+import { getOwnerListings } from "../../api/ownerService";
 
-  // حساب القيم الإجمالية ديناميكياً بناءً على العقارات الفعالية
+export default function OwnerAnalytics() {
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getOwnerListings()
+      .then((data) => {
+        setProperties(data || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching listings in analytics, fallback to localStorage:", err);
+        try {
+          const saved = localStorage.getItem("owner_properties");
+          setProperties(saved ? JSON.parse(saved) : []);
+        } catch (e) {
+          setProperties([]);
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
   const hasProperties = properties.length > 0;
   
   // حساب إجمالي المشاهدات من العقارات الحقيقية

@@ -1,17 +1,49 @@
 import React, { useState, useEffect } from "react";
 import { Star, History, Calendar } from "lucide-react";
 import Badge from "../components/common/Badge";
+import { getOwnerHistory } from "../api/ownerService";
 
 export default function RentalHistory({ isOwner = false }) {
-  // 1. تصفير السجل وجعله يبدأ بمصفوفة فارغة []، ويقرأ من الـ localStorage
-  const [items, setItems] = useState(() => {
-    try {
-      const savedHistory = localStorage.getItem("user_history");
-      return savedHistory ? JSON.parse(savedHistory) : [];
-    } catch (e) {
-      return [];
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOwner) {
+      getOwnerHistory()
+        .then((data) => {
+          const mapped = (data || []).map(u => ({
+            property: `${u.unitType.charAt(0).toUpperCase() + u.unitType.slice(1)} in ${u.address?.city || 'N/A'}`,
+            image: u.images?.[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80",
+            status: "Active",
+            type: u.unitType,
+            start: u.availableFrom ? new Date(u.availableFrom).toLocaleDateString() : 'N/A',
+            end: u.availableTo ? new Date(u.availableTo).toLocaleDateString() : 'Present',
+            price: u.price
+          }));
+          setItems(mapped);
+        })
+        .catch((err) => {
+          console.error("Error loading owner history:", err);
+          try {
+            const savedHistory = localStorage.getItem("user_history");
+            setItems(savedHistory ? JSON.parse(savedHistory) : []);
+          } catch (e) {
+            setItems([]);
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      try {
+        const savedHistory = localStorage.getItem("user_history");
+        setItems(savedHistory ? JSON.parse(savedHistory) : []);
+      } catch (e) {
+        setItems([]);
+      }
+      setLoading(false);
     }
-  });
+  }, [isOwner]);
 
   return (
     <div>
