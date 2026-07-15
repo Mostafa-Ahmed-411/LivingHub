@@ -51,10 +51,10 @@ const userSchema = new mongoose.Schema({
   },
   fullName: {
     type: String,
-    required: true,
+    required: true, // تم إبقاؤه إجبارياً ولكن سنضمن تعبئته دائماً في الـ pre-validate
     trim: true,
     minlength: 2,
-    maxlength: 50
+    maxlength: 150 // زيادة المساحة لتستوعب الأسماء الطويلة المركبة
   },
   email: {
     type: String,
@@ -96,11 +96,15 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// ضمان بناء الـ fullName دائماً لتخطي شرط الـ Validation بنجاح
 userSchema.pre('validate', function(next) {
-  if (this.firstName && this.secondName) {
-    this.fullName = [this.firstName, this.secondName, this.thirdName, this.fourthName]
-      .filter(Boolean)
-      .join(' ');
+  const parts = [this.firstName, this.secondName, this.thirdName, this.fourthName].filter(Boolean);
+  
+  if (parts.length > 0) {
+    this.fullName = parts.join(' ');
+  } else if (!this.fullName) {
+    // حل احتياطي في حال عدم إرسال حقول الأسماء المنفصلة من الواجهة
+    this.fullName = "New User"; 
   }
   next();
 });

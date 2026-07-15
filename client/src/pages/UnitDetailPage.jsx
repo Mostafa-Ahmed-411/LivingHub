@@ -22,7 +22,8 @@ import {
   Wifi,
   Sparkles,
   Shield,
-  Camera
+  Camera,
+  User
 } from "lucide-react";
 import Badge from "../components/common/Badge";
 import Btn from "../components/common/Btn";
@@ -77,8 +78,9 @@ export default function UnitDetailPage({ onNavigate }) {
       beds: u.roomsPerApartment || u.bedsPerRoom || 1,
       baths: specs.baths || 1,
       area: specs.area || 100,
-      rating: u.rating || 4.5,
-      reviews: u.reviewsCount || 0,
+      rating: u.rating || 0, // جعل الافتراضي صفر لمعرفة هل قيمت أم لا
+      reviewsCount: u.reviewsCount || 0,
+      reviewsList: u.reviewsList || [], // استدعاء مصفوفة التقييمات التفصيلية من الباك إيند
       verified: u.status === "available",
       includesWater: specs.includesWater,
       includesElectricity: specs.includesElectricity,
@@ -132,6 +134,10 @@ export default function UnitDetailPage({ onNavigate }) {
     { key: "hasSecurity", label: "Security", icon: Shield },
     { key: "hasCameras", label: "Security Cameras", icon: Camera }
   ];
+
+  // معالجة التقييم
+  const hasRating = p.rating > 0;
+  const ratingText = hasRating ? Number(p.rating).toFixed(1) : "New";
 
   return (
     <div className="min-h-screen bg-white flex flex-col pt-16">
@@ -233,14 +239,14 @@ export default function UnitDetailPage({ onNavigate }) {
               </div>
             </div>
 
-            {/* Bills & Utilities Checklist Card Grid */}
+            {/* Bills & Utilities */}
             <div className="mb-6 bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-4">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm mb-3 font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
                   Utility Bills Coverage
                 </h3>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${p.includesWater ? "bg-green-50/50 border-green-200 text-green-800 animate-pulse-once" : "bg-gray-100/50 border-gray-200 text-gray-400"}`}>
+                  <div className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${p.includesWater ? "bg-green-50/50 border-green-200 text-green-800" : "bg-gray-100/50 border-gray-200 text-gray-400"}`}>
                     <Droplet className={`w-5 h-5 mb-1 ${p.includesWater ? "text-green-600" : "text-gray-400"}`} />
                     <span className="text-xs font-bold">Water</span>
                     <span className="text-[10px] mt-0.5 font-medium">{p.includesWater ? "Included" : "Excluded"}</span>
@@ -261,7 +267,7 @@ export default function UnitDetailPage({ onNavigate }) {
               <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 bg-blue-100 rounded-lg shadow-sm">
-                    <Flame className="w-4 h-4 text-blue-600 animate-pulse" />
+                    <Flame className="w-4 h-4 text-blue-600" />
                   </div>
                   <div>
                     <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Gas Supply Source</p>
@@ -274,7 +280,7 @@ export default function UnitDetailPage({ onNavigate }) {
               </div>
             </div>
 
-            {/* Optional Details */}
+            {/* About Place */}
             {p.description && (
               <div className="mb-6">
                 <h3 className="font-bold text-gray-900 text-sm mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
@@ -284,13 +290,12 @@ export default function UnitDetailPage({ onNavigate }) {
               </div>
             )}
 
-            {/* Grouped Amenities Checklist (Only show true/checked amenities with icons) */}
+            {/* Amenities Grid */}
             <div className="mb-6 space-y-6">
               <h3 className="font-bold text-gray-900 text-sm pb-2 border-b border-gray-100" style={{ fontFamily: "'Poppins', sans-serif" }}>
                 Amenities & Services
               </h3>
               
-              {/* Group 1: Shared */}
               {sharedAmenities.some(item => p[item.key]) && (
                 <div>
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
@@ -310,7 +315,6 @@ export default function UnitDetailPage({ onNavigate }) {
                 </div>
               )}
 
-              {/* Group 2: Room */}
               {roomAmenities.some(item => p[item.key]) && (
                 <div>
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
@@ -330,7 +334,6 @@ export default function UnitDetailPage({ onNavigate }) {
                 </div>
               )}
 
-              {/* Group 3: Services */}
               {servicesAmenities.some(item => p[item.key]) && (
                 <div>
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
@@ -360,10 +363,12 @@ export default function UnitDetailPage({ onNavigate }) {
                   <span className="text-2xl font-extrabold text-blue-600">EGP {p.price.toLocaleString()}</span>
                   <span className="text-sm text-gray-400">/{p.period}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-lg">
                   <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <span className="text-sm font-bold text-gray-900">{p.rating}</span>
-                  <span className="text-sm text-gray-400">({p.reviews})</span>
+                  <span className="text-sm font-bold text-amber-800">{ratingText}</span>
+                  {hasRating && (
+                    <span className="text-xs text-gray-400">({p.reviewsCount})</span>
+                  )}
                 </div>
               </div>
 
@@ -403,7 +408,7 @@ export default function UnitDetailPage({ onNavigate }) {
           </div>
         </div>
 
-        {/* 6 Extra Images Gallery at the bottom */}
+        {/* Gallery at the bottom */}
         {p.gallery && p.gallery.length > 0 && (
           <div className="mt-12 pt-8 border-t border-gray-100">
             <h3 className="font-bold text-gray-900 text-lg mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
@@ -425,6 +430,58 @@ export default function UnitDetailPage({ onNavigate }) {
             </div>
           </div>
         )}
+
+        {/* ==================== نظام مراجعات وتقييمات الطلاب (Property Reviews) ==================== */}
+        <div className="mt-12 pt-8 border-t border-gray-100">
+          <div className="flex items-center gap-3 mb-6">
+            <h3 className="font-bold text-gray-900 text-xl" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Tenant Reviews
+            </h3>
+            <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-lg">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              <span className="text-sm font-bold text-amber-800">{ratingText}</span>
+              {hasRating && (
+                <span className="text-xs text-gray-500">({p.reviewsCount} reviews)</span>
+              )}
+            </div>
+          </div>
+
+          {!p.reviewsList || p.reviewsList.length === 0 ? (
+            <div className="bg-gray-50 rounded-2xl p-8 text-center border border-gray-100">
+              <Star className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-gray-500 text-sm font-medium">No reviews from tenants yet.</p>
+              <p className="text-xs text-gray-400 mt-1">Be the first tenant to leave a review after your stay!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {p.reviewsList.map((rev, index) => (
+                <div key={rev._id || index} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 text-sm">{rev.tenantName || "Verified Tenant"}</h4>
+                          <p className="text-xs text-gray-400">{new Date(rev.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-0.5 bg-amber-50 px-2 py-0.5 rounded-md">
+                        <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                        <span className="text-xs font-bold text-amber-700">{rev.rating}</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 leading-relaxed italic">
+                      "{rev.comment || "Great experience and highly recommended stay!"}"
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
 
       <Footer onNavigate={onNavigate} />

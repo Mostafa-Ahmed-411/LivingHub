@@ -52,7 +52,7 @@ const signupValidation = [
     .matches(/\d/).withMessage('Password must contain at least one number'),
   body('role')
     .notEmpty().withMessage('Role is required')
-    .isIn(['student', 'owner', 'user']).withMessage('Role must be student or owner'),
+    .isIn(['student', 'owner', 'user']).withMessage('Role must be student, user, or owner'),
   body('gender')
     .notEmpty().withMessage('Gender is required')
     .isIn(['Male', 'Female']).withMessage('Gender must be Male or Female'),
@@ -70,39 +70,15 @@ const signupValidation = [
       return value;
     }),
   body('college')
-    .custom((value, { req }) => {
-      const isStudentRole = req.body.role === 'student' || req.body.role === 'user';
-      const isStud = req.body.isStudent !== false;
-      if (isStudentRole && isStud && (!value || !value.trim())) {
-        throw new Error('College is required for students');
-      }
-      return true;
-    }),
+    .optional({ checkFalsy: true })
+    .trim(),
   body('year')
-    .custom((value, { req }) => {
-      const isStudentRole = req.body.role === 'student' || req.body.role === 'user';
-      const isStud = req.body.isStudent !== false;
-      if (isStudentRole && isStud && (!value || !value.trim())) {
-        throw new Error('Year is required for students');
-      }
-      return true;
-    }),
+    .optional({ checkFalsy: true })
+    .trim(),
   body('occupation')
-    .custom((value, { req }) => {
-      const isStudentRole = req.body.role === 'student' || req.body.role === 'user';
-      const isStud = req.body.isStudent !== false;
-      if (isStudentRole && !isStud && (!value || !value.trim())) {
-        throw new Error('Occupation is required');
-      }
-      return true;
-    }),
+    .optional({ checkFalsy: true })
+    .trim(),
   body('alternativePhone')
-    .custom((value, { req }) => {
-      if (req.body.role === 'owner' && (!value || !value.trim())) {
-        throw new Error('Alternative mobile number is required for property owners');
-      }
-      return true;
-    })
     .optional({ checkFalsy: true })
     .customSanitizer(value => {
       if (!value) return value;
@@ -112,7 +88,7 @@ const signupValidation = [
       }
       return clean;
     })
-    .matches(/^01[0125][0-9]{8}$/).withMessage('Invalid Egyptian alternative phone number (must be 11 digits starting with 01)'),
+    .matches(/^01[0125][0-9]{8}$/).withMessage('Invalid Egyptian alternative phone number'),
   validate
 ];
 

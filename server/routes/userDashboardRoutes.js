@@ -5,6 +5,10 @@ const validate = require('../middlewares/validate');
 const upload = require('../middlewares/upload');
 const userDashboardController = require('../controllers/userDashboardController');
 
+// استيراد الـ Controllers الجديدة للصيانة والتقييمات
+const maintenanceController = require('../controllers/maintenanceController');
+const reviewController = require('../controllers/reviewController');
+
 const router = express.Router();
 
 const updateProfileValidation = [
@@ -57,15 +61,39 @@ const changePasswordValidation = [
   validate
 ];
 
-// All user dashboard routes require authentication
+// دمج شروط التحقق السريعة لبلاغات الصيانة والتقييمات
+const maintenanceValidation = [
+  body('title').notEmpty().withMessage('Title is required').trim(),
+  body('description').notEmpty().withMessage('Description is required').trim(),
+  body('category').isIn(['Plumbing', 'Electricity', 'Appliances', 'Internet', 'Furniture', 'Others']).withMessage('Invalid category'),
+  validate
+];
+
+const reviewValidation = [
+  body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be an integer between 1 and 5'),
+  body('comment').optional().trim(),
+  validate
+];
+
+// جميع مسارات لوحة التحكم تتطلب مصادقة الدخول (Authentication)
 router.use(auth);
 
-// It's accessible to 'user' and technically 'owner' since owners can also be tenants
+// مسارات الطالب الأساسية
 router.get('/stats', userDashboardController.getDashboardStats);
 router.get('/profile', userDashboardController.getProfile);
 router.put('/profile', upload('profiles').single('profileImage'), updateProfileValidation, userDashboardController.updateProfile);
 router.put('/change-password', changePasswordValidation, userDashboardController.changePassword);
 router.get('/units', userDashboardController.getMyUnits);
 router.get('/history', userDashboardController.getMyHistory);
+
+// ==================== مسارات بلاغات الصيانة الجديدة ====================
+// جلب بلاغات الصيانة الخاصة بالطالب
+router.get('/maintenance', maintenanceController.getMyTickets);
+// تقديم بلاغ صيانة جديد
+router.post('/maintenance', maintenanceValidation, maintenanceController.createTicket);
+
+// ==================== مسارات نظام التقييمات الجديد ====================
+// تقديم تقييم جديد لشقة والمالك
+router.post('/reviews', reviewValidation, reviewController.createReview);
 
 module.exports = router;

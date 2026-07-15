@@ -7,7 +7,8 @@ import {
   Bell,
   CreditCard,
   User,
-  Settings
+  Settings,
+  Wrench // استيراد أيقونة الصيانة
 } from "lucide-react";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
@@ -20,6 +21,7 @@ export default function StudentDashboard({ onNavigate }) {
   const pathParts = location.pathname.split("/").filter(Boolean);
   const currentTab = pathParts[1] || "dashboard";
 
+  // إضافة تبويب الصيانة (Maintenance) للقائمة الجانبية بشكل رسمي
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart2, badge: 0 },
     { id: "profile", label: "My Profile", icon: User, badge: 0 },
@@ -28,6 +30,7 @@ export default function StudentDashboard({ onNavigate }) {
     { id: "messages", label: "Messages", icon: MessageSquare, badge: 3 },
     { id: "rental-history", label: "Rental History", icon: Calendar, badge: 0 },
     { id: "payments", label: "Payments", icon: CreditCard, badge: 0 },
+    { id: "maintenance", label: "Maintenance", icon: Wrench, badge: 0 }, // تبويب الصيانة الجديد
     { id: "settings", label: "Settings", icon: Settings, badge: 0 }
   ];
 

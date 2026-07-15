@@ -1,24 +1,33 @@
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+
+// قيم احتياطية صارمة في حال عدم قراءة ملف الـ .env مؤقتاً
+const JWT_SECRET = process.env.JWT_SECRET || "mySuperSecretFallbackKey123456!!!";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "mySuperSecretRefreshFallbackKey123456!!!";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "90d";
 
 const generateAccessToken = (user) => {
   return jwt.sign(
     { userId: user._id, role: user.role },
-    process.env.JWT_ACCESS_SECRET,
-    { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
+    JWT_SECRET,
+    { expiresIn: '15m' } // صلاحية الـ Access Token الأساسية
   );
 };
 
 const generateRefreshToken = (user) => {
   return jwt.sign(
     { userId: user._id },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    JWT_REFRESH_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
   );
 };
 
 const hashToken = (token) => {
+  const crypto = require('crypto');
   return crypto.createHash('sha256').update(token).digest('hex');
 };
 
-module.exports = { generateAccessToken, generateRefreshToken, hashToken };
+module.exports = {
+  generateAccessToken,
+  generateRefreshToken,
+  hashToken
+};

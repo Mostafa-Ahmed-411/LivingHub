@@ -22,13 +22,25 @@ export const getOwnerListings = async () => {
   }
 };
 
-// حذف / إلغاء تنشيط عقار
+// إلغاء تنشيط عقار (القديم)
 export const deleteOwnerListing = async (id) => {
   try {
     const response = await api.delete(`/units/${id}`);
     return response.data;
   } catch (error) {
     console.error("Error deleting owner listing:", error);
+    throw error;
+  }
+};
+
+// 👇 الدالة الجديدة: حذف العقار نهائياً من الـ Database 👇
+export const deleteOwnerUnit = async (id) => {
+  try {
+    // إرسال طلب DELETE إلى مسار الحذف الذي قمنا بحقنه في الـ routes والـ controller
+    const response = await api.delete(`/user/dashboard/units/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting property permanently:", error);
     throw error;
   }
 };

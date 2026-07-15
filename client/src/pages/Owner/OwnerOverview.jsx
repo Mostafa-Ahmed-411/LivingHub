@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Building2, CheckCircle, XCircle, Star, Clock, AlertTriangle, Calendar, Bed, Home, Layers } from "lucide-react";
+import { Building2, CheckCircle, XCircle, Star, Clock, AlertTriangle, Calendar, Bed, Home, Layers, Wrench, ChevronRight } from "lucide-react";
 import StatCard from "../../components/common/StatCard";
 import Badge from "../../components/common/Badge";
 
@@ -10,6 +10,13 @@ import { getOwnerOverviewData } from "../../api/ownerService";
 export default function OwnerOverview() {
   const [bookings, setBookings] = useState([]);
   
+  // داتا وهمية لطلبات الصيانة المرفوعة من الطلاب لتشغيل الشاشة فوراً
+  const [maintenanceRequests, setMaintenanceRequests] = useState([
+    { id: 1, tenant: "عمرو طارق", property: "شقة رقم 4 - برج الأبطال", issue: "عطل في السباكة بالحمام الرئيسي", date: "2026-07-12", status: "Pending" },
+    { id: 2, tenant: "أحمد رامي", property: "غرفة مشتركة ب - جناح أ", issue: "تكييف الغرفة لا يبرد ويصدر صوتاً", date: "2026-07-10", status: "In Progress" },
+    { id: 3, tenant: "محمود حسن", property: "استوديو ريفير فيو", issue: "مفتاح الكهرباء الرئيسي يفصل تلقائياً", date: "2026-07-09", status: "Resolved" }
+  ]);
+
   // تصفير العدادات والاشتراكات بالكامل لتكون جاهزة على الشغل الفعلي
   const [counters, setCounters] = useState({
     totalUnits: 0,
@@ -43,7 +50,6 @@ export default function OwnerOverview() {
         const favorites = propsArray.filter(p => p.isFavorite || p.status === "Favorite").length;
         const pendingFav = propsArray.filter(p => p.pendingFavorite || p.status === "Pending Favorite").length;
         
-        // 💡 التعديل المباشر جوه الكود لتصفير العداد تلقائياً
         const storedDays = localStorage.getItem("owner_sub_days");
         const daysLeft = storedDays ? parseInt(storedDays, 10) : 0;
         
@@ -100,13 +106,7 @@ export default function OwnerOverview() {
         if (data.stats) {
           setCounters(prev => ({
             ...prev,
-            totalUnits: data.stats.totalUnits ?? data.stats.activeListings ?? prev.totalUnits,
-            endedUnits: data.stats.endedUnits ?? prev.endedUnits,
-            inactiveUnits: data.stats.inactiveUnits ?? prev.inactiveUnits,
-            favoriteUnits: data.stats.favoriteUnits ?? prev.favoriteUnits,
-            pendingFavoriteUnits: data.stats.pendingFavoriteUnits ?? prev.pendingFavoriteUnits,
-            pendingPublishUnits: data.stats.pendingPublishUnits ?? prev.pendingPublishUnits,
-            subscriptionDaysLeft: data.stats.subscriptionDaysLeft ?? prev.subscriptionDaysLeft
+            ...data.stats
           }));
         }
       })
@@ -121,6 +121,13 @@ export default function OwnerOverview() {
       window.removeEventListener("storage", calculateLocalCounters);
     };
   }, []);
+
+  // دالة لتحديث حالة طلب الصيانة من قبل الاونر
+  const handleUpdateStatus = (id, newStatus) => {
+    setMaintenanceRequests(prev =>
+      prev.map(req => (req.id === id ? { ...req, status: newStatus } : req))
+    );
+  };
 
   const currentRevenueData = bookings.length > 0 ? bookings.map((b, i) => ({ month: `U${i+1}`, revenue: parseFloat(b.rent) || 0 })) : [
     { month: "Jan", revenue: 0 }, { month: "Feb", revenue: 0 }, { month: "Mar", revenue: 0 },
@@ -140,7 +147,6 @@ export default function OwnerOverview() {
       
       {/* الكروت العلوية الثلاثة لحالة الاشتراك ومتابعة النشر */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* كارت أيام الاشتراك */}
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-md p-5 text-white relative overflow-hidden">
           <div className="absolute right-0 bottom-0 opacity-10 translate-x-4 translate-y-4">
             <Calendar className="w-36 h-36" />
@@ -157,7 +163,6 @@ export default function OwnerOverview() {
           </p>
         </div>
 
-        {/* كارت انتظار النشر بسبب الاشتراك */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pending Publish</p>
@@ -169,7 +174,6 @@ export default function OwnerOverview() {
           </div>
         </div>
 
-        {/* كارت انتظار الموافقة على الـ Favorite */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pending Favorites</p>
@@ -269,6 +273,71 @@ export default function OwnerOverview() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* 👇 قسم إدارة طلبات الصيانة المضاف حديثاً (مثل شاشة الطالب) 👇 */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50">
+          <Wrench className="w-5 h-5 text-blue-600" />
+          <h3 className="font-bold text-gray-900">Maintenance & Tickets Management</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/20">
+                {["Tenant", "Property & Unit", "Reported Issue", "Date", "Status", "Actions"].map((h) => (
+                  <th key={h} className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {maintenanceRequests.map((req) => (
+                <tr key={req.id} className="border-b border-gray-50 hover:bg-gray-50/30 transition-all">
+                  <td className="px-5 py-4 text-sm font-semibold text-gray-900">{req.tenant}</td>
+                  <td className="px-5 py-4 text-sm text-gray-600">{req.property}</td>
+                  <td className="px-5 py-4 text-sm text-gray-700 max-w-xs truncate">{req.issue}</td>
+                  <td className="px-5 py-4 text-sm text-gray-500">{req.date}</td>
+                  <td className="px-5 py-4">
+                    <Badge 
+                      variant={
+                        req.status === "Resolved" ? "success" : 
+                        req.status === "In Progress" ? "warning" : "danger"
+                      }
+                    >
+                      {req.status}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-4">
+                    {/* أزرار تفاعلية للاونر لتحديث حالة البلاغ فوراً */}
+                    <div className="flex items-center gap-1.5">
+                      {req.status === "Pending" && (
+                        <button 
+                          onClick={() => handleUpdateStatus(req.id, "In Progress")}
+                          className="px-2.5 py-1 text-[11px] font-bold bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all"
+                        >
+                          Accept Ticket
+                        </button>
+                      )}
+                      {req.status === "In Progress" && (
+                        <button 
+                          onClick={() => handleUpdateStatus(req.id, "Resolved")}
+                          className="px-2.5 py-1 text-[11px] font-bold bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-all"
+                        >
+                          Mark Solved
+                        </button>
+                      )}
+                      {req.status === "Resolved" && (
+                        <span className="text-xs text-gray-400 font-medium flex items-center gap-0.5">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Done
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

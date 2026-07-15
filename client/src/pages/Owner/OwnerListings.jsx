@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, MapPin, Eye, Building, EyeOff } from "lucide-react";
+import { Plus, Edit2, MapPin, Eye, Building, EyeOff, Trash2 } from "lucide-react";
 import Btn from "../../components/common/Btn";
 import Badge from "../../components/common/Badge";
-import { getOwnerListings, toggleUnitActive } from "../../api/ownerService";
+import { getOwnerListings, toggleUnitActive, deleteOwnerUnit } from "../../api/ownerService";
 
 export default function OwnerListings({ onNavigate }) {
   const [userProperties, setUserProperties] = useState([]);
@@ -61,6 +61,36 @@ export default function OwnerListings({ onNavigate }) {
             }
           } catch (e) {
             console.error("Failed to toggle locally:", e);
+          }
+        });
+    }
+  };
+
+  // معالجة عملية حذف الشقة بالكامل
+  const handleDeleteProperty = (id, e) => {
+    e.stopPropagation(); // منع انتقال الحدث إلى الكارت نفسه
+
+    if (window.confirm("⚠️ Warning! Are you sure you want to permanently delete this property listing? This action cannot be undone.")) {
+      deleteOwnerUnit(id)
+        .then(() => {
+          alert("Property deleted successfully!");
+          fetchListings(); // تحديث القائمة من السيرفر بعد الحذف
+        })
+        .catch((err) => {
+          console.error("Error deleting property from server, trying local storage:", err);
+          
+          // Fallback to local storage
+          try {
+            const savedProperties = localStorage.getItem("owner_properties");
+            if (savedProperties) {
+              const parsed = JSON.parse(savedProperties);
+              const updated = parsed.filter(p => (p.id !== id && p._id !== id));
+              localStorage.setItem("owner_properties", JSON.stringify(updated));
+              setUserProperties(updated);
+              alert("Property deleted locally successfully!");
+            }
+          } catch (e) {
+            console.error("Failed to delete locally:", e);
           }
         });
     }
@@ -134,7 +164,7 @@ export default function OwnerListings({ onNavigate }) {
             return (
               <div
                 key={id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow relative"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow relative flex flex-col"
               >
                 {p.isActive === false && (
                   <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none">
@@ -143,7 +173,7 @@ export default function OwnerListings({ onNavigate }) {
                     </span>
                   </div>
                 )}
-                <div className="relative h-44 bg-gray-100">
+                <div className="relative h-44 bg-gray-100 flex-shrink-0">
                   <img src={imgUrl} alt={displayTitle} className="w-full h-full object-cover" />
                   <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-20">
                     <Badge variant={badgeVariant}>
@@ -154,6 +184,7 @@ export default function OwnerListings({ onNavigate }) {
                     <button 
                       onClick={() => onNavigate("unit-form", p)}
                       className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors border-0 cursor-pointer"
+                      title="Edit listing"
                     >
                       <Edit2 className="w-3.5 h-3.5 text-gray-600" />
                     </button>
@@ -168,14 +199,24 @@ export default function OwnerListings({ onNavigate }) {
                         <Eye className="w-3.5 h-3.5 text-blue-600" />
                       )}
                     </button>
+                    {/* زر الحذف الجديد 🗑️ */}
+                    <button 
+                      onClick={(e) => handleDeleteProperty(id, e)}
+                      className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-red-50 transition-colors border-0 cursor-pointer flex items-center justify-center"
+                      title="Delete Listing permanently"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-500 hover:text-red-600" />
+                    </button>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h4 className="font-semibold text-gray-900 text-sm truncate mb-1">{displayTitle}</h4>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mb-3">
-                    <MapPin className="w-3 h-3" /> {locationText}
-                  </p>
-                  <div className="flex items-center justify-between">
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 text-sm truncate mb-1">{displayTitle}</h4>
+                    <p className="text-xs text-gray-500 flex items-center gap-1 mb-3">
+                      <MapPin className="w-3 h-3 animate-pulse" /> {locationText}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between mt-auto">
                     <span className="text-blue-600 font-bold text-sm">
                       EGP {Number(p.price || 0).toLocaleString()}/mo
                     </span>

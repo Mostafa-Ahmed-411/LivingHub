@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Check, Heart, MapPin, BedDouble, Star, Layers, Home } from "lucide-react";
+import { Check, Heart, MapPin, BedDouble, Star, Home } from "lucide-react";
 
 export default function PropertyCard({ property: p, onNavigate }) {
   const [liked, setLiked] = useState(false);
@@ -9,6 +9,11 @@ export default function PropertyCard({ property: p, onNavigate }) {
     Studio: "bg-purple-100 text-purple-700",
     Bed: "bg-amber-100 text-amber-700"
   };
+
+  // حساب وعرض التقييم بشكل ذكي
+  const hasRating = p.rating !== undefined && p.rating !== null && p.rating > 0;
+  const ratingValue = hasRating ? Number(p.rating).toFixed(1) : "New";
+  const reviewsCount = p.numReviews || 0; // نقرأ عدد الريفيوهات من قاعدة البيانات لو وجد
 
   return (
     <div
@@ -56,18 +61,32 @@ export default function PropertyCard({ property: p, onNavigate }) {
 
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex items-center gap-1 mb-1.5">
-            <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-            <span className="text-xs text-gray-500 truncate">{p.location}</span>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1 min-w-0">
+              <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              <span className="text-xs text-gray-500 truncate">{p.location}</span>
+            </div>
+            
+            {/* عرض النجوم والريتنج بشكل منسق ومطوّر */}
+            <div className="flex items-center gap-1 bg-amber-50/80 px-2 py-0.5 rounded-md flex-shrink-0">
+              <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+              <span className="text-xs font-bold text-amber-700">
+                {ratingValue}
+              </span>
+              {hasRating && reviewsCount > 0 && (
+                <span className="text-[10px] text-gray-400 font-medium">
+                  ({reviewsCount})
+                </span>
+              )}
+            </div>
           </div>
           
           <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-3 line-clamp-2">
             {p.title}
           </h3>
 
-          {/* Dynamic spec rendering depending on unit type */}
+          {/* Specs layout depending on unit type */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 mb-4 font-medium">
-            {/* Bed or Studio */}
             {(p.type === "Bed" || p.type === "Studio") && (
               <>
                 <span className="flex items-center gap-1">
@@ -78,7 +97,6 @@ export default function PropertyCard({ property: p, onNavigate }) {
               </>
             )}
 
-            {/* Room */}
             {p.type === "Room" && (
               <>
                 <span className="flex items-center gap-1">
@@ -89,7 +107,6 @@ export default function PropertyCard({ property: p, onNavigate }) {
               </>
             )}
 
-            {/* Apartment */}
             {p.type === "Apartment" && (
               <>
                 <span className="flex items-center gap-1">
@@ -104,11 +121,6 @@ export default function PropertyCard({ property: p, onNavigate }) {
 
             <span>·</span>
             <span>Floor: {p.floor}</span>
-
-            <span>·</span>
-            <span className="flex items-center gap-0.5">
-              <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> {p.rating}
-            </span>
           </div>
         </div>
 

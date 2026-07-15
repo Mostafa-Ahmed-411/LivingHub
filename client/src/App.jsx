@@ -10,6 +10,7 @@ import VerifyOTPPage from "./pages/Auth/VerifyOTPPage";
 import StudentDashboard from "./pages/Student/StudentDashboard";
 import StudentOverview from "./pages/Student/StudentOverview";
 import StudentUnits from "./pages/Student/StudentUnits";
+import MaintenancePage from "./pages/Student/MaintenancePage"; // 1. استيراد صفحة الصيانة الجديدة
 import RentalHistory from "./pages/RentalHistory";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
@@ -115,6 +116,8 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-account" element={<VerifyOTPPage onNavigate={handleNavigate} />} />
         </Route>
+
+        {/* مسارات الطالب (Student) */}
         <Route path="/student" element={<StudentDashboard onNavigate={handleNavigate} />}>
           <Route index element={<Navigate to="/student/dashboard" replace />} />
           <Route path="dashboard" element={<StudentOverview onNavigate={handleNavigate} onTab={(targetTab) => handleNavigate(`/student/${targetTab}`)} />} />
@@ -124,8 +127,10 @@ export default function App() {
           <Route path="messages" element={<ChatPage compact={true} />} />
           <Route path="rental-history" element={<RentalHistory />} />
           <Route path="payments" element={<PaymentsPage />} />
+          <Route path="maintenance" element={<MaintenancePage />} /> {/* 2. ربط المسار رسمياً لمنع الشاشة البيضاء */}
           <Route path="settings" element={<SettingsPage />} />
         </Route>
+
         <Route path="/owner" element={<OwnerDashboard onNavigate={handleNavigate} />}>
           <Route index element={<Navigate to="/owner/dashboard" replace />} />
           <Route path="dashboard" element={<OwnerOverview />} />
@@ -137,6 +142,7 @@ export default function App() {
           <Route path="profile" element={<ProfilePage isOwner={true} />} />
           <Route path="history" element={<RentalHistory isOwner={true} />} />
         </Route>
+
         <Route path="/admin" element={<AdminDashboard onNavigate={handleNavigate} />}>
           <Route index element={<Navigate to="/admin/overview" replace />} />
           <Route path="overview" element={<AdminOverview />} />
@@ -149,6 +155,7 @@ export default function App() {
           <Route path="audit" element={<AdminAuditLogs />} />
           <Route path="settings" element={<SettingsPage isAdmin={true} />} />
         </Route>
+
         <Route
           path="/unit-form"
           element={
