@@ -9,7 +9,9 @@ import {
   Home as HomeIcon,
   BedDouble,
   Star,
-  ArrowRight
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
@@ -313,41 +315,126 @@ function StatsStrip() {
 }
 
 function Testimonials() {
-  return (
-    <section className="py-16 px-4 sm:px-6 max-w-7xl mx-auto">
-      <div className="text-center mb-10">
-        <h2
-          className="text-3xl font-bold text-gray-900 mb-3"
-          style={{ fontFamily: "'Poppins', sans-serif" }}
-        >
-          What Students Say
-        </h2>
-        <p className="text-gray-500">Real experiences from real students</p>
-      </div>
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [itemsPerView, setItemsPerView] = useState(3);
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {testimonials.map((t) => (
-          <div
-            key={t.id}
-            className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setItemsPerView(3);
+      } else if (window.innerWidth >= 768) {
+        setItemsPerView(2);
+      } else {
+        setItemsPerView(1);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const maxIndex = testimonials.length - itemsPerView;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [maxIndex]);
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
+  };
+
+  return (
+    <section className="py-20 bg-gray-50/40 relative overflow-hidden">
+      <div className="px-4 sm:px-6 max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h2
+            className="text-3xl font-bold text-gray-900 mb-3"
+            style={{ fontFamily: "'Poppins', sans-serif" }}
           >
-            <div className="flex gap-0.5 mb-4">
-              {Array.from({ length: t.rating }).map((_, i) => (
-                <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+            What Students Say
+          </h2>
+          <p className="text-gray-500">Real experiences from real students</p>
+        </div>
+
+        <div className="relative px-4 sm:px-12">
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-out"
+              style={{
+                transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`
+              }}
+            >
+              {testimonials.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex-shrink-0 px-3 transition-all duration-300"
+                  style={{ width: `${100 / itemsPerView}%` }}
+                >
+                  <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col justify-between">
+                    <div>
+                      <div className="flex gap-0.5 mb-5">
+                        {Array.from({ length: t.rating }).map((_, i) => (
+                          <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                        ))}
+                      </div>
+                      <p className="text-gray-700 text-sm leading-relaxed mb-6 italic">
+                        &ldquo;{t.text}&rdquo;
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 border-t border-gray-100 pt-5 mt-auto">
+                      <img
+                        src={t.avatar}
+                        alt={t.name}
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-50"
+                      />
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm">{t.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {t.year} &middot; {t.university}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
-            <p className="text-gray-700 text-sm leading-relaxed mb-5 italic">&ldquo;{t.text}&rdquo;</p>
-            <div className="flex items-center gap-3">
-              <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
-                <p className="text-xs text-gray-500">
-                  {t.year} &middot; {t.university}
-                </p>
-              </div>
-            </div>
           </div>
-        ))}
+
+          <button
+            onClick={prevSlide}
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all cursor-pointer z-10"
+            aria-label="Previous Review"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all cursor-pointer z-10"
+            aria-label="Next Review"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex justify-center gap-2 mt-8">
+          {Array.from({ length: testimonials.length - itemsPerView + 1 }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                currentIndex === i ? "bg-blue-600 w-5" : "bg-gray-300 hover:bg-gray-400"
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

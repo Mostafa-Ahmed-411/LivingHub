@@ -6,6 +6,8 @@ import useAuth from "../../hooks/useAuth";
 export default function Navbar({ onNavigate, currentPage }) {
   const [open, setOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [showMsgDropdown, setShowMsgDropdown] = useState(false);
   const [lang, setLang] = useState("en");
   const [theme, setTheme] = useState("light");
   const { user: authUser, logout } = useAuth();
@@ -105,7 +107,7 @@ export default function Navbar({ onNavigate, currentPage }) {
             <Building2 className="w-4 h-4 text-white" />
           </div>
           <span className="text-xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Living<span className="text-blue-600">Hub</span>
+            Mae<span className="text-blue-600">esha</span>
           </span>
         </button>
 
@@ -140,16 +142,53 @@ export default function Navbar({ onNavigate, currentPage }) {
 
           {user && (
             <div className="hidden md:flex items-center gap-1">
-              <button onClick={() => onNavigate("chat")} className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent">
-                <MessageSquare className="w-5 h-5" />
-              </button>
+              <div className="relative">
+                <button onClick={() => setShowMsgDropdown(!showMsgDropdown)} className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent">
+                  <MessageSquare className="w-5 h-5" />
+                </button>
+                {showMsgDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMsgDropdown(false)} />
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <span className="font-semibold text-gray-900 dark:text-white">Messages</span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => { onNavigate("chat"); setShowMsgDropdown(false); }} className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer bg-transparent border-0 p-0">Open in page</button>
+                          <button onClick={() => setShowMsgDropdown(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-0 p-0"><X className="w-4 h-4" /></button>
+                        </div>
+                      </div>
+                      <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                        No new messages
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
               
-              {/* تعديل زر الجرس ليتفاعل مع الـ State اللحظي */}
-              <button onClick={() => onNavigate("notifications")} className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent">
-                <Bell className="w-5 h-5" />
-                {/* 💡 البادج الأحمر هيظهر بنبض خفيف فقط لو فيه إشعارات unread */}
-                {hasUnread && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
-              </button>
+              <div className="relative">
+                <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent">
+                  <Bell className="w-5 h-5" />
+                  {/* 💡 البادج الأحمر هيظهر بنبض خفيف فقط لو فيه إشعارات unread */}
+                  {hasUnread && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+                </button>
+                {showNotifDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifDropdown(false)} />
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <span className="font-semibold text-gray-900 dark:text-white">Notifications</span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => { onNavigate("notifications"); setShowNotifDropdown(false); }} className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer bg-transparent border-0 p-0">Open in page</button>
+                          <button onClick={() => setShowNotifDropdown(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-0 p-0"><X className="w-4 h-4" /></button>
+                        </div>
+                      </div>
+                      <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                        No new notifications
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
@@ -190,12 +229,30 @@ export default function Navbar({ onNavigate, currentPage }) {
                     <div className="py-1">
                       <button
                         onClick={() => {
+                          onNavigate("profile");
+                          setShowDropdown(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer bg-transparent border-0"
+                      >
+                        Profile
+                      </button>
+                      <button
+                        onClick={() => {
                           onNavigate(user.role === "owner" ? "owner" : "student");
                           setShowDropdown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer bg-transparent border-0"
                       >
                         Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          onNavigate("settings");
+                          setShowDropdown(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer bg-transparent border-0"
+                      >
+                        Settings
                       </button>
                     </div>
 

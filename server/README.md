@@ -1,6 +1,6 @@
-# LivingHub Backend API
+# Maeesha Backend API
 
-This is the backend for LivingHub, a student housing platform for renting and buying apartments, rooms, studios, and beds.
+This is the backend for Maeesha, a student housing platform for renting and buying apartments, rooms, studios, and beds.
 
 ## Tech Stack
 - Node.js & Express.js
@@ -35,7 +35,7 @@ This is the backend for LivingHub, a student housing platform for renting and bu
    npm run seed
    ```
    This will create a default admin user:
-   - **Email:** `admin@livinghub.com`
+   - **Email:** `admin@maeesha.com`
    - **Password:** `admin1234`
 
 4. **Start the Development Server:**

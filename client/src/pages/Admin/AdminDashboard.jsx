@@ -31,10 +31,10 @@ export default function AdminDashboard({ onNavigate }) {
 
   // Get active tab ID from route path
   const pathParts = location.pathname.split("/").filter(Boolean);
-  const currentTab = pathParts[1] || "overview";
+  const currentTab = pathParts[1] || "dashboard";
 
   const navItems = [
-    { id: "overview", label: "Overview", icon: BarChart2, badge: 0 },
+    { id: "dashboard", label: "Dashboard", icon: BarChart2, badge: 0 },
     { id: "pending", label: "Pending Approvals", icon: AlertCircle, badge: pendingCount },
     { id: "users", label: "Users", icon: Users, badge: 0 },
     { id: "units", label: "Units", icon: Building2, badge: 0 },

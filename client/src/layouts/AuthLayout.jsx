@@ -21,7 +21,7 @@ export default function AuthLayout({ onNavigate }) {
               className="text-xl font-bold text-white"
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
-              LivingHub
+              Maeesha
             </span>
           </button>
 

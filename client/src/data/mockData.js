@@ -367,7 +367,7 @@ export const testimonials = [
     year: "3rd Year, Engineering",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&auto=format",
     rating: 5,
-    text: "LivingHub made finding my studio so easy. I found the perfect place near campus within 3 days. The verification system gave me complete confidence."
+    text: "Maeesha made finding my studio so easy. I found the perfect place near campus within 3 days. The verification system gave me complete confidence."
   },
   {
     id: 2,
@@ -385,7 +385,25 @@ export const testimonials = [
     year: "4th Year, Medicine",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&auto=format",
     rating: 5,
-    text: "The platform is beautifully designed and so intuitive. Managed my entire apartment search and rent payments through LivingHub. Highly recommend!"
+    text: "The platform is beautifully designed and so intuitive. Managed my entire apartment search and rent payments through Maeesha. Highly recommend!"
+  },
+  {
+    id: 4,
+    name: "Mariam Hassan",
+    university: "GUC",
+    year: "1st Year, Pharmacy",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&auto=format",
+    rating: 5,
+    text: "I found a roommate and a perfect double room in Heliopolis through the community tab. It saved me a lot of money and time."
+  },
+  {
+    id: 5,
+    name: "Kareem Aly",
+    university: "Alexandria University",
+    year: "3rd Year, Computer Science",
+    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&auto=format",
+    rating: 5,
+    text: "The security deposit payment and contracts are handled online, making it very transparent and professional. Best student housing site in Egypt!"
   }
 ];
 
@@ -484,4 +502,14 @@ export const communityPosts = [
     liked: true,
     comments: 3
   }
+];
+
+export const recentActivity = [
+  { id: 1, type: "user", title: "New User Registered", desc: "Ahmed Hassan joined as Student", time: "10 mins ago", color: "bg-blue-50 text-blue-600" },
+  { id: 2, type: "unit", title: "New Unit Added", desc: "Studio in Zamalek listed by Sara", time: "1 hour ago", color: "bg-green-50 text-green-600" },
+  { id: 3, type: "payment", title: "Payment Approved", desc: "Rent payment for TXN-87654320", time: "3 hours ago", color: "bg-emerald-50 text-emerald-600" },
+  { id: 4, type: "report", title: "New Report Opened", desc: "Complaint regarding maintenance", time: "5 hours ago", color: "bg-red-50 text-red-600" },
+  { id: 5, type: "audit", title: "Audit Log Flagged", desc: "Failed login attempt detected", time: "1 day ago", color: "bg-purple-50 text-purple-600" },
+  { id: 6, type: "user", title: "User Verified", desc: "Nada El-Sayed verified their ID", time: "1 day ago", color: "bg-blue-50 text-blue-600" },
+  { id: 7, type: "unit", title: "Unit Approved", desc: "Apartment in Mohandessin approved", time: "2 days ago", color: "bg-green-50 text-green-600" }
 ];

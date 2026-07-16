@@ -34,11 +34,11 @@ export default function AdminAuditLogs() {
         <div className="divide-y divide-gray-50">
           {[
             { action: "User Login", actor: "ahmed@email.com", ip: "196.218.x.x", time: "2025-07-06 14:32:01", level: "info" },
-            { action: "Property Approved", actor: "admin@livinghub.com", ip: "196.218.x.x", time: "2025-07-06 14:28:15", level: "success" },
+            { action: "Property Approved", actor: "admin@maeesha.com", ip: "196.218.x.x", time: "2025-07-06 14:28:15", level: "success" },
             { action: "Payment Confirmed", actor: "system", ip: "—", time: "2025-07-06 14:15:44", level: "success" },
             { action: "Failed Login Attempt", actor: "unknown@email.com", ip: "41.72.x.x", time: "2025-07-06 14:01:23", level: "warning" },
-            { action: "User Suspended", actor: "admin@livinghub.com", ip: "196.218.x.x", time: "2025-07-06 13:55:09", level: "danger" },
-            { action: "Bulk Data Export", actor: "admin@livinghub.com", ip: "196.218.x.x", time: "2025-07-06 13:40:31", level: "info" }
+            { action: "User Suspended", actor: "admin@maeesha.com", ip: "196.218.x.x", time: "2025-07-06 13:55:09", level: "danger" },
+            { action: "Bulk Data Export", actor: "admin@maeesha.com", ip: "196.218.x.x", time: "2025-07-06 13:40:31", level: "info" }
           ].map((log, i) => (
             <div key={i} className="px-5 py-3.5 flex items-center gap-4">
               <div

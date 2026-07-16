@@ -104,8 +104,8 @@ const signup = async (req, res, next) => {
         if (isEmail) {
             await sendEmail({
                 to: target,
-                subject: "LivingHub - Verify Your Account",
-                message: `Welcome to LivingHub, ${user.fullName}!\n\Your verification code is: ${verificationCode}\nThis code will expire in 15 minutes.`,
+                subject: "Maeesha - Verify Your Account",
+                message: `Welcome to Maeesha, ${user.fullName}!\n\Your verification code is: ${verificationCode}\nThis code will expire in 15 minutes.`,
             });
         } else {
             if (process.env.NODE_ENV === "production") {
@@ -345,7 +345,7 @@ const forgotPassword = async (req, res, next) => {
         if (isEmail) {
             await sendEmail({
                 to: user.email,
-                subject: "LivingHub - Password Reset",
+                subject: "Maeesha - Password Reset",
                 message: `You requested a password reset.\nYour reset token is: ${resetToken}\nThis token will expire in 15 minutes.`,
             });
         } else {
@@ -419,7 +419,7 @@ const resendOTP = async (req, res, next) => {
 
         await sendEmail({
             to: user.email,
-            subject: "LivingHub - New Verification Code",
+            subject: "Maeesha - New Verification Code",
             message: `Your new verification code is: ${verificationCode}\nThis code will expire in 15 minutes.`,
         });
 

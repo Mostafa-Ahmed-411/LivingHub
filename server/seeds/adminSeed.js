@@ -10,11 +10,11 @@ const Property = require('../models/Property');
 
 const seedDatabase = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/livinghub');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/maeesha');
     console.log('Connected to MongoDB');
 
     // ================= 1. إدارة حساب الآدمن =================
-    const adminEmail = 'admin@livinghub.com';
+    const adminEmail = 'admin@maeesha.com';
     const existingAdmin = await User.findOne({ email: adminEmail });
 
     if (existingAdmin) {
@@ -29,7 +29,7 @@ const seedDatabase = async () => {
         accountStatus: 'active'
       });
       console.log('Admin user created successfully! 🎉');
-      console.log('Email: admin@livinghub.com | Password: admin1234');
+      console.log('Email: admin@maeesha.com | Password: admin1234');
     }
 
     // ================= 2. استيراد داتا العقارات من الـ JSON =================

@@ -1,4 +1,4 @@
-# LivingHub ERD (Entity Relationship Diagram)
+# Maeesha ERD (Entity Relationship Diagram)
 
 ```mermaid
 erDiagram

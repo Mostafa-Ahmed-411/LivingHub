@@ -20,7 +20,7 @@ import OwnerListings from "./pages/Owner/OwnerListings";
 import OwnerAnalytics from "./pages/Owner/OwnerAnalytics";
 import OwnerIncome from "./pages/Owner/OwnerIncome";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
-import AdminOverview from "./pages/Admin/AdminOverview";
+import AdminDashboardTab from "./pages/Admin/AdminDashboardTab";
 import AdminPending from "./pages/Admin/AdminPending";
 import AdminUsers from "./pages/Admin/AdminUsers";
 import AdminAds from "./pages/Admin/AdminAds";
@@ -33,6 +33,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import SearchPage from "./pages/SearchPage";
 import AboutPage from "./pages/AboutPage";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 
 function DemoNav({ current }) {
   const navigate = useNavigate();
@@ -116,44 +117,48 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-account" element={<VerifyOTPPage onNavigate={handleNavigate} />} />
         </Route>
-
-        {/* مسارات الطالب (Student) */}
-        <Route path="/student" element={<StudentDashboard onNavigate={handleNavigate} />}>
-          <Route index element={<Navigate to="/student/dashboard" replace />} />
-          <Route path="dashboard" element={<StudentOverview onNavigate={handleNavigate} onTab={(targetTab) => handleNavigate(`/student/${targetTab}`)} />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="my-units" element={<StudentUnits onNavigate={handleNavigate} />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="messages" element={<ChatPage compact={true} />} />
-          <Route path="rental-history" element={<RentalHistory />} />
-          <Route path="payments" element={<PaymentsPage />} />
-          <Route path="maintenance" element={<MaintenancePage />} /> {/* 2. ربط المسار رسمياً لمنع الشاشة البيضاء */}
-          <Route path="settings" element={<SettingsPage />} />
+        <Route element={<ProtectedRoute allowedRoles={['user', 'student']} />}>
+          <Route path="/student" element={<StudentDashboard onNavigate={handleNavigate} />}>
+            <Route index element={<Navigate to="/student/dashboard" replace />} />
+            <Route path="dashboard" element={<StudentOverview onNavigate={handleNavigate} onTab={(targetTab) => handleNavigate(`/student/${targetTab}`)} />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="my-units" element={<StudentUnits onNavigate={handleNavigate} />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="messages" element={<ChatPage compact={true} />} />
+            <Route path="rental-history" element={<RentalHistory />} />
+            <Route path="payments" element={<PaymentsPage />} />
+            <Route path="maintenance" element={<MaintenancePage />} /> {/* 2. ربط المسار رسمياً لمنع الشاشة البيضاء */}
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
         </Route>
 
-        <Route path="/owner" element={<OwnerDashboard onNavigate={handleNavigate} />}>
-          <Route index element={<Navigate to="/owner/dashboard" replace />} />
-          <Route path="dashboard" element={<OwnerOverview />} />
-          <Route path="add-unit" element={<UnitFormPage onNavigate={handleNavigate} embedded={true} />} />
-          <Route path="my-units" element={<OwnerListings onNavigate={handleNavigate} />} />
-          <Route path="analytics" element={<OwnerAnalytics />} />
-          <Route path="income" element={<OwnerIncome />} />
-          <Route path="chats" element={<ChatPage compact={true} />} />
-          <Route path="profile" element={<ProfilePage isOwner={true} />} />
-          <Route path="history" element={<RentalHistory isOwner={true} />} />
+        <Route element={<ProtectedRoute allowedRoles={['owner']} />}>
+          <Route path="/owner" element={<OwnerDashboard onNavigate={handleNavigate} />}>
+            <Route index element={<Navigate to="/owner/dashboard" replace />} />
+            <Route path="dashboard" element={<OwnerOverview />} />
+            <Route path="add-unit" element={<UnitFormPage onNavigate={handleNavigate} embedded={true} />} />
+            <Route path="my-units" element={<OwnerListings onNavigate={handleNavigate} />} />
+            <Route path="analytics" element={<OwnerAnalytics />} />
+            <Route path="income" element={<OwnerIncome />} />
+            <Route path="chats" element={<ChatPage compact={true} />} />
+            <Route path="profile" element={<ProfilePage isOwner={true} />} />
+            <Route path="history" element={<RentalHistory isOwner={true} />} />
+          </Route>
         </Route>
 
-        <Route path="/admin" element={<AdminDashboard onNavigate={handleNavigate} />}>
-          <Route index element={<Navigate to="/admin/overview" replace />} />
-          <Route path="overview" element={<AdminOverview />} />
-          <Route path="pending" element={<AdminPending />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="units" element={<OwnerListings onNavigate={handleNavigate} />} />
-          <Route path="payments" element={<PaymentsPage />} />
-          <Route path="ads" element={<AdminAds />} />
-          <Route path="reports" element={<OwnerAnalytics />} />
-          <Route path="audit" element={<AdminAuditLogs />} />
-          <Route path="settings" element={<SettingsPage isAdmin={true} />} />
+        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+          <Route path="/admin" element={<AdminDashboard onNavigate={handleNavigate} />}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboardTab />} />
+            <Route path="pending" element={<AdminPending />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="units" element={<OwnerListings onNavigate={handleNavigate} />} />
+            <Route path="payments" element={<PaymentsPage />} />
+            <Route path="ads" element={<AdminAds />} />
+            <Route path="reports" element={<OwnerAnalytics />} />
+            <Route path="audit" element={<AdminAuditLogs />} />
+            <Route path="settings" element={<SettingsPage isAdmin={true} />} />
+          </Route>
         </Route>
 
         <Route

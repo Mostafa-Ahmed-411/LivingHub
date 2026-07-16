@@ -130,7 +130,7 @@ export default function OwnerListings({ onNavigate }) {
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-1">No units yet</h3>
           <p className="text-sm text-gray-500 max-w-sm mb-6">
-            You haven't added any units to LivingHub yet. Click the button below to add your first unit.
+            You haven't added any units to Maeesha yet. Click the button below to add your first unit.
           </p>
           <Btn variant="primary" size="sm" onClick={() => onNavigate("unit-form")}>
             <Plus className="w-4 h-4" /> Add First Unit

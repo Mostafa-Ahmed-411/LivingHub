@@ -59,7 +59,7 @@ export default function LoginPage({ onNavigate }) {
 					Welcome back
 				</h1>
 				<p className="text-gray-500 text-sm">
-					Sign in to your LivingHub account
+					Sign in to your Maeesha account
 				</p>
 			</div>
 

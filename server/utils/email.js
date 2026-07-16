@@ -26,7 +26,7 @@ const sendEmail = async (options) => {
     });
 
     const mailOptions = {
-      from: `LivingHub <${process.env.EMAIL_USER}>`,
+      from: `Maeesha <${process.env.EMAIL_USER}>`,
       to: options.to,
       subject: options.subject,
       text: options.message

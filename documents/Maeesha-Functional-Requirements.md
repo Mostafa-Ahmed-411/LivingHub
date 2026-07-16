@@ -1,7 +1,7 @@
-# LivingHub — Functional Requirements Specification (FRS)
+# Maeesha — Functional Requirements Specification (FRS)
 
 **Version:** 0.2
-**Companion to:** LivingHub-PRD.md
+**Companion to:** Maeesha-PRD.md
 **Purpose:** Break down every module into Main Function + detailed Functional Requirements, so each can be converted directly into tickets/user stories.
 
 ---
@@ -131,7 +131,7 @@ Owners can pay to make their unit a **Favorite**. Capped at **20 concurrent Favo
 - Should support URL-shareable filters (so a user can share a filtered link)
 
 **FR-3.4 Static Content**
-- "About Us" / "Why LivingHub" section — static content, likely CMS-editable by Admin in the future, hardcoded for MVP
+- "About Us" / "Why Maeesha" section — static content, likely CMS-editable by Admin in the future, hardcoded for MVP
 
 ---
 

@@ -184,7 +184,7 @@ export default function RegisterPage() {
         >
           Create account <Sparkles className="w-5 h-5 text-blue-500 animate-pulse" />
         </h1>
-        <p className="text-gray-500 text-xs font-medium">Join thousands of students on LivingHub</p>
+        <p className="text-gray-500 text-xs font-medium">Join thousands of students on Maeesha</p>
       </div>
 
       {/* Progress Bar */}

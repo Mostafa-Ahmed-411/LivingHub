@@ -1,4 +1,4 @@
-# LivingHub API Documentation
+# Maeesha API Documentation
 
 **Base URL:** `http://localhost:5000/api`
 
@@ -57,7 +57,7 @@
 
 | Method | Endpoint | Description | Role | Body / Params | Responses |
 |---|---|---|---|---|---|
-| GET | `/stats` | Platform statistics | Admin | None | 200 OK |
+| GET | `/stats` | Platform statistics, sparklines, growth data & recent activity | Admin | None | 200 OK (`{ stats, sparklineUsers, sparklineUnits, growthData, recentActivity }`) |
 | GET | `/pendings` | Pending units & payments | Admin | None | 200 OK |
 | POST | `/units/:id/approve`| Approve unit | Admin | `Params`: `id` | 200 OK |
 | POST | `/units/:id/reject` | Reject unit | Admin | `Params`: `id`, `Body`: `reason` | 200 OK |

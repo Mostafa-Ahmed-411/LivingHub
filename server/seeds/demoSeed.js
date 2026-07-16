@@ -14,10 +14,10 @@ const Ad = require('../models/Ad');
 const seedDemoData = async () => {
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/livinghub');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/maeesha');
     console.log('Connected to MongoDB.');
 
-    const admin = await User.findOne({ email: 'admin@livinghub.com' });
+    const admin = await User.findOne({ email: 'admin@maeesha.com' });
     if (!admin) {
       throw new Error('Admin user not found! Please run npm run seed first.');
     }
@@ -323,12 +323,12 @@ const seedDemoData = async () => {
 
     // 8. ADS
     const adsData = [
-      { title: 'Summer Offer', image: 'placeholder.txt', targetLocation: 'home', linkUrl: 'https://livinghub.com/summer', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: true },
-      { title: 'Discount on Apartments', image: 'placeholder.txt', targetLocation: 'search', linkUrl: 'https://livinghub.com/apartments', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: true },
-      { title: 'Student Packs', image: 'placeholder.txt', targetLocation: 'dashboard', linkUrl: 'https://livinghub.com/student', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: true },
-      { title: 'Winter Promo', image: 'placeholder.txt', targetLocation: 'home', linkUrl: 'https://livinghub.com/winter', startDate: new Date(), endDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10), isActive: true }, // Expired
-      { title: 'Owner Special', image: 'placeholder.txt', targetLocation: 'dashboard', linkUrl: 'https://livinghub.com/owner', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: false }, // Inactive
-      { title: 'Featured Unit', image: 'placeholder.txt', targetLocation: 'search', linkUrl: 'https://livinghub.com/featured', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: true }
+      { title: 'Summer Offer', image: 'placeholder.txt', targetLocation: 'home', linkUrl: 'https://maeesha.com/summer', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: true },
+      { title: 'Discount on Apartments', image: 'placeholder.txt', targetLocation: 'search', linkUrl: 'https://maeesha.com/apartments', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: true },
+      { title: 'Student Packs', image: 'placeholder.txt', targetLocation: 'dashboard', linkUrl: 'https://maeesha.com/student', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: true },
+      { title: 'Winter Promo', image: 'placeholder.txt', targetLocation: 'home', linkUrl: 'https://maeesha.com/winter', startDate: new Date(), endDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10), isActive: true }, // Expired
+      { title: 'Owner Special', image: 'placeholder.txt', targetLocation: 'dashboard', linkUrl: 'https://maeesha.com/owner', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: false }, // Inactive
+      { title: 'Featured Unit', image: 'placeholder.txt', targetLocation: 'search', linkUrl: 'https://maeesha.com/featured', startDate: new Date(), endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), isActive: true }
     ];
 
     const ads = [];
