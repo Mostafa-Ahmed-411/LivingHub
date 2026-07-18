@@ -19,6 +19,7 @@ import StatCard from "../../components/common/StatCard";
 import Badge from "../../components/common/Badge";
 import Btn from "../../components/common/Btn";
 import PropertyCard from "../../components/common/PropertyCard";
+import api from "../../api/client";
 
 export default function StudentOverview({ onNavigate, onTab }) {
   const [studentData, setStudentData] = useState(null);
@@ -41,13 +42,9 @@ export default function StudentOverview({ onNavigate, onTab }) {
 
   useEffect(() => {
     // جلب البيانات من المسار المعتمد في السيرفر
-    fetch("/api/user/dashboard/stats")
+    api.get("/user/dashboard/stats")
       .then((res) => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
-      .then((data) => {
-        setStudentData(data);
+        setStudentData(res.data);
         setLoading(false);
       })
       .catch((err) => {

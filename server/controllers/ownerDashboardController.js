@@ -68,10 +68,50 @@ const getDashboardStats = async (req, res, next) => {
 
 const getMyUnits = async (req, res, next) => {
   try {
-    const units = await Unit.find({ ownerId: req.user._id, isActive: true })
-      .sort({ createdAt: -1 });
+    const { page = 1, limit = 15, filter } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
 
-    res.json({ units });
+    const query = { ownerId: req.user._id, isDeleted: { $ne: true } };
+
+    if (filter) {
+      if (filter === 'active') {
+        query.isActive = true;
+      } else if (filter === 'inactive') {
+        query.isActive = false;
+      } else if (filter === 'accepted') {
+        query.status = 'available';
+      } else if (filter === 'rejected') {
+        query.status = 'rejected';
+      } else if (filter === 'pending') {
+        query.status = { $in: ['pending', 'pending_approval'] };
+      } else if (filter === 'featured_on') {
+        query.isFeatured = true;
+        query.featuredUntil = { $gt: new Date() };
+      } else if (filter === 'featured_off') {
+        query.$or = [
+          { isFeatured: false },
+          { isFeatured: { $exists: false } },
+          { featuredUntil: { $lte: new Date() } }
+        ];
+      }
+    }
+
+    const [units, total] = await Promise.all([
+      Unit.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      Unit.countDocuments(query)
+    ]);
+
+    res.json({
+      units,
+      pagination: {
+        total,
+        page: Number(page),
+        pages: Math.ceil(total / Number(limit))
+      }
+    });
   } catch (error) {
     next(error);
   }

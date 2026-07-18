@@ -1,14 +1,17 @@
 const Unit = require('../models/Unit');
 const User = require('../models/User');
+const Ad = require('../models/Ad');
 
 const getRecommendedUnits = async (req, res, next) => {
   try {
     const units = await Unit.find({
       status: 'available',
       isActive: true,
-      isDeleted: { $ne: true }
+      isDeleted: { $ne: true },
+      isFeatured: true,
+      featuredUntil: { $gt: new Date() }
     })
-      .sort({ createdAt: -1 })
+      .sort({ featuredAt: -1, createdAt: -1 })
       .limit(8)
       .populate('ownerId', 'fullName profileImage');
 
@@ -36,7 +39,7 @@ const searchUnits = async (req, res, next) => {
       minRating,
       sort,
       page = 1,
-      limit = 10
+      limit = 15
     } = req.query;
 
     const query = { isActive: true, isDeleted: { $ne: true } };
@@ -333,4 +336,18 @@ const getStats = async (req, res, next) => {
   }
 };
 
-module.exports = { getRecommendedUnits, searchUnits, getStats };
+const getActiveAd = async (req, res, next) => {
+  try {
+    const activeAd = await Ad.findOne({
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() }
+    }).sort({ createdAt: -1 });
+
+    res.json({ success: true, ad: activeAd });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getRecommendedUnits, searchUnits, getStats, getActiveAd };

@@ -5,7 +5,10 @@ import api from '../api/client';
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('clientData');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [loading, setLoading] = useState(true);
 
   // تحديث الـ localStorage والـ State معاً عند جلب بيانات البروفايل تلقائياً
@@ -21,9 +24,16 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (err) {
           console.error('Failed to auto-authenticate user:', err);
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('clientData');
+          // Don't log the user out immediately on a failed profile fetch unless it's a 401/403
+          // The interceptor will handle token refresh, and if that fails, the interceptor will clear the token.
+          if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('clientData');
+            setUser(null);
+          }
         }
+      } else {
+        setUser(null);
       }
       setLoading(false);
     };

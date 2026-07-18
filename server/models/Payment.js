@@ -10,7 +10,12 @@ const paymentSchema = new mongoose.Schema({
   unitId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Unit',
-    required: true
+    required: false
+  },
+  paymentType: {
+    type: String,
+    enum: ['unit_publish', 'contact_package'],
+    default: 'unit_publish'
   },
   amount: {
     type: Number,

@@ -129,6 +129,10 @@
     font-family: 'Inter', sans-serif;
   }
 
+  html[dir="rtl"] body, html[dir="rtl"] input, html[dir="rtl"] button, html[dir="rtl"] select, html[dir="rtl"] textarea {
+    font-family: 'Cairo', sans-serif;
+  }
+
   html {
     font-size: var(--font-size);
   }
@@ -180,3 +184,75 @@
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
   ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 }
+
+/* --- Dark Mode Section Overrides & Smooth Transitions --- */
+body, header, aside, main, section, nav, .bg-white, p, h1, h2, h3, h4, span, div, button, input, select, textarea {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.dark {
+  background-color: #0f172a !important; /* slate-900 */
+  color: #f8fafc !important; /* slate-50 */
+
+  .bg-white {
+    background-color: #1e293b !important; /* slate-800 */
+  }
+  .bg-gray-50, .bg-slate-50, .bg-gray-100, .bg-slate-100,
+  [class*="bg-gray-50/"], [class*="bg-slate-50/"], [class*="bg-gray-100/"], [class*="bg-slate-100/"] {
+    background-color: #0f172a !important; /* slate-900 */
+  }
+  .bg-gray-200, .bg-slate-200 {
+    background-color: #334155 !important; /* slate-700 */
+  }
+
+  /* Text color fixes */
+  .text-gray-950, .text-gray-900, .text-gray-800, .text-gray-700, .text-slate-900, .text-slate-800, .text-slate-700 {
+    color: #f8fafc !important;
+  }
+  .text-gray-600, .text-gray-500, .text-slate-600, .text-slate-500 {
+    color: #cbd5e1 !important;
+  }
+  .text-gray-400, .text-slate-400 {
+    color: #94a3b8 !important;
+  }
+  .text-black {
+    color: #ffffff !important;
+  }
+  
+  /* Overrides for #838893 color in dark mode */
+  [style*="color: #838893"], [style*="color:#838893"], .text-\[\#838893\], [style*="color: rgb(131, 136, 147)"] {
+    color: #cbd5e1 !important; /* brighter gray for readability in dark mode */
+  }
+
+  /* Borders fixes */
+  .border-gray-50, .border-gray-100, .border-gray-200, .border-slate-100, .border-slate-200 {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Scrollbar dark mode adjustments */
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+
+  /* Fix for shadows in dark mode */
+  .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Form controls styling in dark mode */
+  input, select, textarea {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  /* Dropdowns and dialogs specific corrections */
+  .absolute.bg-white {
+    background-color: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+}
+

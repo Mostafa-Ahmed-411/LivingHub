@@ -3,7 +3,6 @@ import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContai
 import { Users, Building2, DollarSign, AlertCircle, Shield, Flag, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StatCard from "../../components/common/StatCard";
-import { growthData } from "../../data/mockData";
 import { getAdminStats } from "../../api/adminService";
 
 export default function AdminOverview() {
@@ -17,13 +16,19 @@ export default function AdminOverview() {
     pendingPayments: 0,
     unitsByType: {}
   });
+  const [growth, setGrowth] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getAdminStats()
       .then((data) => {
-        if (data && data.stats) {
-          setStats(data.stats);
+        if (data) {
+          if (data.stats) {
+            setStats(data.stats);
+          }
+          if (data.growthData) {
+            setGrowth(data.growthData);
+          }
         }
       })
       .catch((err) => {
@@ -82,7 +87,7 @@ export default function AdminOverview() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-semibold text-gray-900 mb-5">Platform Growth Overview</h3>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={growthData}>
+            <AreaChart data={growth}>
               <defs>
                 <linearGradient id="usersG" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#2563EB" stopOpacity={0.15} />
@@ -157,7 +162,8 @@ export default function AdminOverview() {
             { label: "Studios", key: "studio", color: "bg-amber-50 text-amber-700 border-amber-100" },
             { label: "Beds / Shared", key: "bed", color: "bg-purple-50 text-purple-700 border-purple-100" }
           ].map((item) => {
-            const count = stats.unitsByType[item.key] || 0;
+            const typeObj = stats.unitsByType[item.key];
+            const count = typeObj && typeof typeObj === 'object' ? typeObj.total : (typeObj || 0);
             return (
               <div key={item.key} className={`p-4 rounded-xl border flex flex-col items-center text-center ${item.color}`}>
                 <span className="text-2xl font-black mb-1">{count}</span>

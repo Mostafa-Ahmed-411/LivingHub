@@ -3,9 +3,11 @@ const Unit = require('../models/Unit');
 const Payment = require('../models/Payment');
 const Ad = require('../models/Ad');
 const AuditLog = require('../models/AuditLog');
+const Report = require('../models/Report');
 const Notification = require('../models/Notification');
 const AppError = require('../utils/AppError');
 const Settings = require('../models/Settings');
+const { notifyAllUsers } = require('../utils/notifications');
 
 // --- Dashboard Stats ---
 const getDashboardStats = async (req, res, next) => {
@@ -33,7 +35,9 @@ const getDashboardStats = async (req, res, next) => {
       sparkUnitsRaw,
       growthUsersRaw,
       growthUnitsRaw,
-      recentLogs
+      recentLogs,
+      openReportsCount,
+      recentAuditCount
     ] = await Promise.all([
       User.countDocuments({ role: 'user' }),
       User.countDocuments({ role: 'owner' }),
@@ -60,7 +64,9 @@ const getDashboardStats = async (req, res, next) => {
         { $match: { createdAt: { $gte: sixMonthsAgo } } },
         { $group: { _id: { month: { $month: "$createdAt" }, year: { $year: "$createdAt" } }, props: { $sum: 1 } } }
       ]),
-      AuditLog.find().sort({ createdAt: -1 }).limit(7).populate('performedBy', 'fullName')
+      AuditLog.find().sort({ createdAt: -1 }).limit(7).populate('performedBy', 'fullName'),
+      Report.countDocuments({ status: 'open' }),
+      AuditLog.countDocuments({ createdAt: { $gte: sevenDaysAgo } })
     ]);
 
     const averageRating = avgRatingAgg.length > 0 ? parseFloat(avgRatingAgg[0].avgRating.toFixed(1)) : 4.8;
@@ -159,8 +165,8 @@ const getDashboardStats = async (req, res, next) => {
         availableUnits,
         pendingApprovals,
         pendingPayments,
-        openReports: 0, // No Report model currently
-        openAuditLogs: 0, // Fixed
+        openReports: openReportsCount,
+        openAuditLogs: recentAuditCount,
         adsOccupied,
         averageRating
       },
@@ -287,11 +293,34 @@ const approvePayment = async (req, res, next) => {
       throw new AppError('Payment not found or already processed', 404);
     }
 
-    // Auto-advance the unit status
-    const unit = await Unit.findById(payment.unitId);
-    if (unit && unit.status === 'pending_payment') {
-      unit.status = 'pending_approval';
-      await unit.save();
+    if (payment.paymentType === 'contact_package') {
+      const user = await User.findById(payment.ownerId);
+      if (user) {
+        user.paidUnlocksRemaining = (user.paidUnlocksRemaining || 0) + 10;
+        user.paidUnlocksExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await user.save();
+      }
+
+      await Notification.create({
+        userId: payment.ownerId,
+        type: 'payment_confirmed',
+        message: 'تم تأكيد الدفع بنجاح وشحن باقة الـ 10 تواصل صالحة لمدة 30 يوماً.',
+        relatedEntityId: payment._id
+      });
+    } else {
+      // Auto-advance the unit status
+      const unit = await Unit.findById(payment.unitId);
+      if (unit && unit.status === 'pending_payment') {
+        unit.status = 'pending_approval';
+        await unit.save({ validateModifiedOnly: true });
+      }
+
+      await Notification.create({
+        userId: payment.ownerId,
+        type: 'payment_confirmed',
+        message: 'Your payment has been confirmed. Your unit is now pending approval.',
+        relatedEntityId: payment.unitId
+      });
     }
 
     await AuditLog.create({
@@ -299,14 +328,7 @@ const approvePayment = async (req, res, next) => {
       action: 'approve_payment',
       targetId: payment._id,
       targetType: 'Payment',
-      previousData: { status: payment.status }
-    });
-
-    await Notification.create({
-      userId: payment.ownerId,
-      type: 'payment_confirmed',
-      message: 'Your payment has been confirmed. Your unit is now pending approval.',
-      relatedEntityId: payment.unitId
+      previousData: { status: 'pending' }
     });
 
     res.json({ message: 'Payment approved successfully' });
@@ -445,18 +467,21 @@ const flagUser = async (req, res, next) => {
 // --- Ads Management ---
 const createAd = async (req, res, next) => {
   try {
-    const { title, targetLocation, linkUrl, startDate, endDate } = req.body;
+    const { title, description, targetLocation, linkUrl, startDate, endDate } = req.body;
 
     if (!req.file) throw new AppError('Ad image is required', 400);
 
     const ad = await Ad.create({
       title,
+      description,
       image: req.file.filename,
       targetLocation,
       linkUrl,
       startDate,
       endDate
     });
+
+    await notifyAllUsers(req.app, 'push_ad', `New advertisement: ${ad.title}`, ad._id);
 
     res.status(201).json({ message: 'Ad created successfully', ad });
   } catch (error) {
@@ -468,6 +493,41 @@ const getAds = async (req, res, next) => {
   try {
     const ads = await Ad.find().sort({ createdAt: -1 });
     res.json({ ads });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateAd = async (req, res, next) => {
+  try {
+    const { title, description, targetLocation, linkUrl, startDate, endDate, isActive } = req.body;
+    const ad = await Ad.findById(req.params.id);
+    if (!ad) throw new AppError('Ad not found', 404);
+
+    if (title) ad.title = title;
+    if (description !== undefined) ad.description = description;
+    if (targetLocation) ad.targetLocation = targetLocation;
+    if (linkUrl !== undefined) ad.linkUrl = linkUrl;
+    if (startDate) ad.startDate = startDate;
+    if (endDate) ad.endDate = endDate;
+    if (isActive !== undefined) ad.isActive = isActive === 'true' || isActive === true;
+
+    if (req.file) {
+      ad.image = req.file.filename;
+    }
+
+    await ad.save();
+    res.json({ message: 'Ad updated successfully', ad });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteAd = async (req, res, next) => {
+  try {
+    const ad = await Ad.findByIdAndDelete(req.params.id);
+    if (!ad) throw new AppError('Ad not found', 404);
+    res.json({ message: 'Ad deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -514,7 +574,7 @@ const approveFeature = async (req, res, next) => {
     unit.isFeatured = true;
     unit.featuredAt = new Date();
     unit.featuredUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await unit.save();
+    await unit.save({ validateModifiedOnly: true });
 
     await AuditLog.create({
       performedBy: req.user._id,
@@ -549,7 +609,7 @@ const rejectFeature = async (req, res, next) => {
     }
 
     unit.featureRequestStatus = 'rejected';
-    await unit.save();
+    await unit.save({ validateModifiedOnly: true });
 
     await AuditLog.create({
       performedBy: req.user._id,
@@ -606,6 +666,138 @@ const getSettings = async (req, res, next) => {
   }
 };
 
+// --- Audit Logs ---
+const getAuditLogs = async (req, res, next) => {
+  try {
+    const { action, page = 1, limit = 20 } = req.query;
+    const query = {};
+
+    if (action && action !== 'All') {
+      query.action = { $regex: action, $options: 'i' };
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const [logs, total] = await Promise.all([
+      AuditLog.find(query)
+        .populate('performedBy', 'fullName email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      AuditLog.countDocuments(query)
+    ]);
+
+    const formattedLogs = logs.map(log => {
+      let level = 'info';
+      if (log.action.includes('approve') || log.action.includes('unban')) level = 'success';
+      else if (log.action.includes('reject') || log.action.includes('ban')) level = 'danger';
+      else if (log.action.includes('flag') || log.action.includes('status_change')) level = 'warning';
+
+      return {
+        _id: log._id,
+        action: log.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        actor: log.performedBy?.email || log.performedBy?.fullName || 'System',
+        actorName: log.performedBy?.fullName || 'System',
+        targetType: log.targetType,
+        targetId: log.targetId,
+        reason: log.reason || '',
+        level,
+        time: log.createdAt
+      };
+    });
+
+    res.json({
+      logs: formattedLogs,
+      pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Reports ---
+const getReports = async (req, res, next) => {
+  try {
+    const { status, reportType, page = 1, limit = 20 } = req.query;
+    const query = {};
+
+    if (status && status !== 'All') query.status = status;
+    if (reportType && reportType !== 'All') query.reportType = reportType;
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const [reports, total] = await Promise.all([
+      Report.find(query)
+        .populate('reportedBy', 'fullName email')
+        .populate('resolvedBy', 'fullName')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      Report.countDocuments(query)
+    ]);
+
+    res.json({
+      reports,
+      pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resolveReport = async (req, res, next) => {
+  try {
+    const { resolution } = req.body;
+    const report = await Report.findById(req.params.id);
+    if (!report) throw new AppError('Report not found', 404);
+    if (report.status !== 'open') throw new AppError('Report is already processed', 400);
+
+    report.status = 'resolved';
+    report.resolvedBy = req.user._id;
+    report.resolvedAt = new Date();
+    report.resolution = resolution || 'Resolved by admin';
+    await report.save();
+
+    await AuditLog.create({
+      performedBy: req.user._id,
+      action: 'resolve_report',
+      targetId: report._id,
+      targetType: 'Report',
+      reason: report.resolution
+    });
+
+    res.json({ message: 'Report resolved successfully', report });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const dismissReport = async (req, res, next) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) throw new AppError('Report not found', 404);
+    if (report.status !== 'open') throw new AppError('Report is already processed', 400);
+
+    report.status = 'dismissed';
+    report.resolvedBy = req.user._id;
+    report.resolvedAt = new Date();
+    report.resolution = 'Dismissed by admin';
+    await report.save();
+
+    await AuditLog.create({
+      performedBy: req.user._id,
+      action: 'dismiss_report',
+      targetId: report._id,
+      targetType: 'Report',
+      reason: 'Report dismissed'
+    });
+
+    res.json({ message: 'Report dismissed successfully', report });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getPendings,
@@ -619,10 +811,16 @@ module.exports = {
   flagUser,
   createAd,
   getAds,
+  updateAd,
+  deleteAd,
   toggleAdStatus,
   getFeatureRequests,
   approveFeature,
   rejectFeature,
   updateSettings,
-  getSettings
+  getSettings,
+  getAuditLogs,
+  getReports,
+  resolveReport,
+  dismissReport
 };

@@ -1,4 +1,4 @@
-import api from './api';
+import api from './client';
 
 // جلب بيانات الـ Overview الخاصة بالـ Owner
 export const getOwnerOverviewData = async () => {
@@ -12,10 +12,11 @@ export const getOwnerOverviewData = async () => {
 };
 
 // جلب قائمة العقارات الخاصة بالمالك
-export const getOwnerListings = async () => {
+export const getOwnerListings = async (page = 1, filter = "") => {
   try {
-    const response = await api.get('/owner/dashboard/units');
-    return response.data.units;
+    const url = `/owner/dashboard/units?page=${page}&limit=15` + (filter ? `&filter=${filter}` : '');
+    const response = await api.get(url);
+    return response.data;
   } catch (error) {
     console.error("Error fetching owner listings:", error);
     throw error;
@@ -93,6 +94,17 @@ export const updateUnit = async (id, formData) => {
     return response.data;
   } catch (error) {
     console.error("Error updating unit:", error);
+    throw error;
+  }
+};
+
+// طلب تمييز وحدة (Featured)
+export const requestFeature = async (id) => {
+  try {
+    const response = await api.patch(`/owner/units/${id}/request-feature`);
+    return response.data;
+  } catch (error) {
+    console.error("Error requesting feature status:", error);
     throw error;
   }
 };

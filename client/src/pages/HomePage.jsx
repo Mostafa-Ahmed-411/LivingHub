@@ -18,12 +18,23 @@ import Footer from "../components/layout/Footer";
 import PropertyCard from "../components/common/PropertyCard";
 import Btn from "../components/common/Btn";
 import CountUp from "../components/common/CountUp";
-import { getStatsAPI } from "../api/search";
-import { cities, properties, testimonials } from "../data/mockData";
+import { getStatsAPI, getRecommendedUnitsAPI } from "../api/search";
+import { cities, testimonials } from "../constants/staticData";
+import { mapBackendUnitToProperty } from "../utils/propertyMapper";
+import { useLanguage } from "../context/LanguageContext";
 
 function Hero({ onNavigate }) {
   const [city, setCity] = useState("Cairo");
   const [type, setType] = useState("All Types");
+  const { t, lang } = useLanguage();
+
+  const typeLabels = {
+    "All Types": lang === "en" ? "All Types" : "كل الأنواع",
+    "Apartment": lang === "en" ? "Apartment" : "شقة",
+    "Room": lang === "en" ? "Room" : "غرفة",
+    "Studio": lang === "en" ? "Studio" : "استوديو",
+    "Bed": lang === "en" ? "Bed" : "سرير"
+  };
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -39,19 +50,18 @@ function Hero({ onNavigate }) {
       <div className="relative z-10 text-center px-4 sm:px-6 max-w-4xl mx-auto pt-20 pb-12">
         <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-full mb-6 border border-white/25">
           <Zap className="w-4 h-4 text-amber-300" />
-          Egypt's #1 Student Housing Platform
+          {t("hero.badge")}
         </div>
         <h1
           className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white mb-5 leading-tight tracking-tight"
           style={{ fontFamily: "'Poppins', sans-serif" }}
         >
-          Find Your Perfect
+          {t("hero.title")}
           <br />
-          <span className="text-blue-300">Student Home</span>
+          <span className="text-blue-300">{t("hero.subtitle")}</span>
         </h1>
         <p className="text-lg sm:text-xl text-blue-100/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-          Discover verified apartments, studios, rooms, and beds near your university. Safe,
-          affordable, and just a click away.
+          {t("hero.desc")}
         </p>
 
         <div className="bg-white/10 backdrop-blur-xl border border-white/25 rounded-2xl p-3 sm:p-4 shadow-2xl mb-10 max-w-3xl mx-auto">
@@ -80,7 +90,7 @@ function Hero({ onNavigate }) {
               >
                 {["All Types", "Apartment", "Room", "Studio", "Bed"].map((t) => (
                   <option key={t} value={t} className="text-gray-900 bg-white">
-                    {t}
+                    {typeLabels[t]}
                   </option>
                 ))}
               </select>
@@ -90,20 +100,20 @@ function Hero({ onNavigate }) {
               onClick={() => onNavigate("search", { city, type })}
               className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-blue-500/30"
             >
-              <Search className="w-4 h-4" /> Search Now
+              <Search className="w-4 h-4" /> {t("hero.searchBtn")}
             </button>
           </div>
         </div>
 
         <div className="flex flex-wrap justify-center gap-5 text-white/80 text-sm">
           <span className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-amber-300" /> 12+ Egyptian Cities
+            <MapPin className="w-4 h-4 text-amber-300" /> {t("hero.citiesCount")}
           </span>
           <span className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-300" /> 50,000+ Students
+            <Users className="w-4 h-4 text-blue-300" /> {t("hero.studentsCount")}
           </span>
           <span className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-green-400" /> 15,000+ Verified Units
+            <Building2 className="w-4 h-4 text-green-400" /> {t("hero.verifiedCount")}
           </span>
         </div>
       </div>
@@ -124,6 +134,7 @@ function Categories({ onNavigate }) {
     rooms: 4120,
     beds: 2670
   });
+  const { t } = useLanguage();
 
   useEffect(() => {
     getStatsAPI()
@@ -139,7 +150,7 @@ function Categories({ onNavigate }) {
 
   const cats = [
     {
-      label: "Apartments",
+      label: t("categories.apartments"),
       icon: Building2,
       count: categories.apartments,
       bg: "bg-blue-50 hover:bg-blue-100",
@@ -149,7 +160,7 @@ function Categories({ onNavigate }) {
       suffix: "+"
     },
     {
-      label: "Studios",
+      label: t("categories.studios"),
       icon: Layers,
       count: categories.studios,
       bg: "bg-purple-50 hover:bg-purple-100",
@@ -159,7 +170,7 @@ function Categories({ onNavigate }) {
       suffix: "+"
     },
     {
-      label: "Rooms",
+      label: t("categories.rooms"),
       icon: HomeIcon,
       count: categories.rooms,
       bg: "bg-green-50 hover:bg-green-100",
@@ -169,7 +180,7 @@ function Categories({ onNavigate }) {
       suffix: "+"
     },
     {
-      label: "Bed Spaces",
+      label: t("categories.beds"),
       icon: BedDouble,
       count: categories.beds,
       bg: "bg-amber-50 hover:bg-amber-100",
@@ -187,10 +198,10 @@ function Categories({ onNavigate }) {
           className="text-3xl font-bold text-gray-900 mb-3"
           style={{ fontFamily: "'Poppins', sans-serif" }}
         >
-          Browse by Category
+          {t("categories.title")}
         </h2>
         <p className="text-gray-500 max-w-lg mx-auto">
-          Find exactly what fits your budget and lifestyle
+          {t("categories.subtitle")}
         </p>
       </div>
 
@@ -198,7 +209,7 @@ function Categories({ onNavigate }) {
         {cats.map((cat) => (
           <button
             key={cat.label}
-            onClick={() => onNavigate("search", { type: cat.label.slice(0, -1) })}
+            onClick={() => onNavigate("search", { type: cat.label })}
             className={`${cat.bg} border ${cat.border} rounded-2xl p-6 text-center transition-all duration-200 hover:shadow-md hover:-translate-y-0.5`}
           >
             <div
@@ -219,7 +230,28 @@ function Categories({ onNavigate }) {
 
 function FeaturedUnits({ onNavigate }) {
   const [filter, setFilter] = useState("All");
-  const filtered = filter === "All" ? properties : properties.filter((p) => p.governorate === filter);
+  const [propertiesList, setPropertiesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    const loadFeatured = async () => {
+      try {
+        const data = await getRecommendedUnitsAPI();
+        if (data && data.units) {
+          const mapped = data.units.map(mapBackendUnitToProperty);
+          setPropertiesList(mapped);
+        }
+      } catch (err) {
+        console.error("Error fetching recommended units:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadFeatured();
+  }, []);
+
+  const filtered = filter === "All" ? propertiesList : propertiesList.filter((p) => p.governorate === filter);
 
   return (
     <section className="py-16 bg-gray-50/60">
@@ -230,9 +262,9 @@ function FeaturedUnits({ onNavigate }) {
               className="text-3xl font-bold text-gray-900 mb-2"
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
-              Featured Units
+              {t("featured.title")}
             </h2>
-            <p className="text-gray-500">Hand-picked, verified listings for students</p>
+            <p className="text-gray-500">{t("featured.subtitle")}</p>
           </div>
           <div className="relative flex-shrink-0 w-56">
             <select
@@ -240,7 +272,7 @@ function FeaturedUnits({ onNavigate }) {
               onChange={(e) => setFilter(e.target.value)}
               className="w-full bg-white text-gray-900 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65em_auto] bg-[position:right_1rem_center] bg-no-repeat cursor-pointer shadow-sm hover:border-gray-300 transition-colors"
             >
-              <option value="All">All Governorates</option>
+              <option value="All">{t("featured.allGovs")}</option>
               {cities.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -250,15 +282,25 @@ function FeaturedUnits({ onNavigate }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((p) => (
-            <PropertyCard key={p.id} property={p} onNavigate={onNavigate} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            {t("featured.noUnits")}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((p) => (
+              <PropertyCard key={p.id} property={p} onNavigate={onNavigate} />
+            ))}
+          </div>
+        )}
 
         <div className="text-center mt-10">
           <Btn variant="outline" size="lg" onClick={() => onNavigate("search")}>
-            View All Properties <ArrowRight className="w-4 h-4" />
+            {t("featured.viewAll")} <ArrowRight className="w-4 h-4" />
           </Btn>
         </div>
       </div>
@@ -273,6 +315,7 @@ function StatsStrip() {
     egyptianCities: 12,
     satisfactionRate: 98
   });
+  const { t, lang } = useLanguage();
 
   useEffect(() => {
     getStatsAPI()
@@ -287,10 +330,10 @@ function StatsStrip() {
   }, []);
 
   const items = [
-    { value: stats.verifiedUnits, label: "Verified Units", suffix: "+" },
-    { value: stats.happyStudents, label: "Happy Students", suffix: "+" },
-    { value: stats.egyptianCities, label: "Egyptian Cities", suffix: "" },
-    { value: stats.satisfactionRate, label: "Satisfaction Rate", suffix: "%" }
+    { value: stats.verifiedUnits, label: t("stats.verifiedUnits"), suffix: "+" },
+    { value: stats.happyStudents, label: lang === "en" ? "Happy Students" : "طالب سعيد", suffix: "+" },
+    { value: stats.egyptianCities, label: t("stats.cities"), suffix: "" },
+    { value: stats.satisfactionRate, label: lang === "en" ? "Satisfaction Rate" : "نسبة الرضا", suffix: "%" }
   ];
 
   return (

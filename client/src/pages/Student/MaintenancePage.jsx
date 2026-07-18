@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Wrench, Clock, CheckCircle2, AlertCircle, Plus, X } from "lucide-react";
 import Badge from "../../components/common/Badge";
 import Btn from "../../components/common/Btn";
+import api from "../../api/client";
 
 export default function MaintenancePage() {
   const [tickets, setTickets] = useState([]);
@@ -17,13 +18,9 @@ export default function MaintenancePage() {
 
   useEffect(() => {
     // جلب البلاغات الحقيقية
-    fetch("/api/user/dashboard/maintenance")
+    api.get("/user/dashboard/maintenance")
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        return res.json();
-      })
-      .then((data) => {
-        setTickets(data.tickets || []);
+        setTickets(res.data.tickets || []);
         setLoading(false);
       })
       .catch((err) => {
@@ -45,26 +42,17 @@ export default function MaintenancePage() {
     };
 
     // إرسال للباك إيند (POST)
-    fetch("/api/user/dashboard/maintenance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTicket)
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    api.post("/user/dashboard/maintenance", newTicket)
+      .then((res) => {
         // تحديث القائمة فوراً في الفرونت إيند بدون ريفريش
-        setTickets([data.ticket, ...tickets]); 
+        setTickets([res.data.ticket, ...tickets]); 
         setIsModalOpen(false);
         setTitle("");
         setDescription("");
       })
       .catch((err) => {
-        console.error("Error creating maintenance ticket:", err);
-        // كود احتياطي للمعاينة لو السيرفر مش شغال حالياً:
-        setTickets([newTicket, ...tickets]);
-        setIsModalOpen(false);
-        setTitle("");
-        setDescription("");
+        console.error("Error submitting maintenance ticket:", err);
+        alert(err.response?.data?.message || err.message || "Failed to submit request.");
       });
   };
 

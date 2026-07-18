@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Grid, List, MapPin, Star } from "lucide-react";
 import PropertyCard from "../../components/common/PropertyCard";
 import Badge from "../../components/common/Badge";
+import api, { BACKEND_URL } from "../../api/client";
 
 export default function StudentUnits({ onNavigate }) {
   const [view, setView] = useState("grid");
@@ -10,16 +11,10 @@ export default function StudentUnits({ onNavigate }) {
 
   useEffect(() => {
     // جلب الوحدات المؤجرة الحقيقية من الباك إيند
-    fetch("/api/user/dashboard/units")
+    api.get("/user/dashboard/units")
       .then((res) => {
-        if (!res.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return res.json();
-      })
-      .then((data) => {
         // السيرفر يرجع { units: [...] }
-        setUnits(data.units || []);
+        setUnits(res.data.units || []);
         setLoading(false);
       })
       .catch((err) => {
@@ -81,7 +76,9 @@ export default function StudentUnits({ onNavigate }) {
               title: p.title || p.name,
               price: p.price,
               location: p.location || p.address,
-              image: p.images?.[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=200&h=140&fit=crop&auto=format",
+              image: p.images?.[0] 
+                ? (p.images[0].startsWith('http') ? p.images[0] : `${BACKEND_URL}/uploads/units/${p.images[0]}`)
+                : "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=200&h=140&fit=crop&auto=format",
               type: p.type || "Unit",
               rating: p.rating || 5.0
             };
@@ -94,7 +91,9 @@ export default function StudentUnits({ onNavigate }) {
         <div className="space-y-3">
           {units.map((p) => {
             const title = p.title || p.name;
-            const image = p.images?.[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=200&h=140&fit=crop&auto=format";
+            const image = p.images?.[0] 
+              ? (p.images[0].startsWith('http') ? p.images[0] : `${BACKEND_URL}/uploads/units/${p.images[0]}`)
+              : "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=200&h=140&fit=crop&auto=format";
             const location = p.location || p.address;
             const price = p.price || 0;
             const type = p.type || "Unit";
@@ -104,7 +103,7 @@ export default function StudentUnits({ onNavigate }) {
               <div
                 key={p._id}
                 className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => onNavigate("unit-detail")}
+                onClick={() => onNavigate("unit-detail", p)}
               >
                 <img src={image} alt={title} className="w-24 h-20 rounded-xl object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0">

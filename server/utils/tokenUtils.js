@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 // قيم احتياطية صارمة في حال عدم قراءة ملف الـ .env مؤقتاً
-const JWT_SECRET = process.env.JWT_SECRET || "mySuperSecretFallbackKey123456!!!";
+const JWT_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "mySuperSecretFallbackKey123456!!!";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "mySuperSecretRefreshFallbackKey123456!!!";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "90d";
 

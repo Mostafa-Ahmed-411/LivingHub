@@ -16,10 +16,13 @@ import {
 } from "lucide-react";
 import Inp from "../components/common/Inp";
 import Btn from "../components/common/Btn";
-import { cities } from "../data/mockData";
+import { cities } from "../constants/staticData";
 import { createUnit, updateUnit } from "../api/ownerService";
+import useAuth from "../hooks/useAuth";
+import { BACKEND_URL } from "../api/client";
 
 export default function UnitFormPage({ onNavigate, embedded = false }) {
+  const { logout } = useAuth();
   const location = useLocation();
   const editingUnit = location.state || null;
 
@@ -40,8 +43,8 @@ export default function UnitFormPage({ onNavigate, embedded = false }) {
   const [description, setDescription] = useState(editingUnit?.description || "");
 
   // الخطوة 2: الموقع الجغرافي
-  const [governorate, setGovernorate] = useState(editingUnit?.address?.governorate || "Cairo");
-  const [district, setDistrict] = useState(editingUnit?.address?.city || "");
+  const [governorate, setGovernorate] = useState(editingUnit?.address?.governorate || "Assiut");
+  const [district, setDistrict] = useState(editingUnit?.address?.city || "محطة");
   const [address, setAddress] = useState(editingUnit?.address?.street || "");
   const [university, setUniversity] = useState(editingUnit?.address?.nearestUniversity || "");
 
@@ -260,53 +263,53 @@ export default function UnitFormPage({ onNavigate, embedded = false }) {
       formData.append("images", imageFile2);
     }
 
+    const existingImages = [];
+    if (editingUnit) {
+      if (!imageFile1 && coverImage1 && coverImage1.startsWith('http')) {
+        existingImages.push(coverImage1);
+      }
+      if (!imageFile2 && coverImage2 && coverImage2.startsWith('http')) {
+        existingImages.push(coverImage2);
+      }
+    }
+    formData.append("existingImages", JSON.stringify(existingImages));
+
+    const currentUser = (() => {
+      try {
+        const savedData = localStorage.getItem("clientData");
+        return savedData ? JSON.parse(savedData) : null;
+      } catch (e) {
+        return null;
+      }
+    })();
+
     try {
       if (editingUnit) {
         await updateUnit(editingUnit._id || editingUnit.id, formData);
         alert("Unit updated successfully!");
+        window.dispatchEvent(new Event("storage"));
+        if (typeof onNavigate === "function") {
+          if (currentUser?.role === "admin") {
+            onNavigate("/admin/units");
+          } else {
+            onNavigate("/owner/my-units");
+          }
+        }
       } else {
         await createUnit(formData);
         alert("Unit added successfully!");
+        window.dispatchEvent(new Event("storage"));
+        if (currentUser?.role === "admin") {
+          if (typeof onNavigate === "function") onNavigate("/admin/units");
+        } else {
+          await logout();
+          if (typeof onNavigate === "function") onNavigate("/login");
+        }
       }
-      window.dispatchEvent(new Event("storage"));
-      if (typeof onNavigate === "function") onNavigate("/owner/my-units");
     } catch (err) {
       console.error("Error saving unit data to server:", err);
-      alert("Failed to submit unit to server. Saving locally instead.");
-
-      try {
-        const newProperty = {
-          id: Date.now(),
-          title,
-          unitType: type,
-          type,
-          listingFor,
-          description,
-          governorate,
-          district,
-          location: `${district}, ${governorate}`,
-          address,
-          university,
-          bedsCount: type === "Apartment" ? beds : type === "Bed" || type === "Studio" ? roomBeds : beds,
-          roomsCount: type === "Apartment" ? beds : 1,
-          bathroomsCount: baths,
-          status: "Active",
-          price: Number(price),
-          rentPrice: price,
-          depositPrice: deposit,
-          deposit: Number(deposit),
-          available: true,
-          views: 0,
-          image: coverImage1 || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80",
-          image2: coverImage2 || ""
-        };
-        const existingProperties = JSON.parse(localStorage.getItem("owner_properties") || "[]");
-        localStorage.setItem("owner_properties", JSON.stringify([newProperty, ...existingProperties]));
-        window.dispatchEvent(new Event("storage"));
-        if (typeof onNavigate === "function") onNavigate("/owner/my-units");
-      } catch (localErr) {
-        console.error("Local fallback save failed:", localErr);
-      }
+      const serverMsg = err.response?.data?.message || err.message || "Failed to submit unit to server.";
+      alert(serverMsg);
     }
   };
 
@@ -387,7 +390,14 @@ export default function UnitFormPage({ onNavigate, embedded = false }) {
                   {cities.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <Inp label="المدينة / المنطقة" placeholder="مثال: حي الجامعة" value={district} onChange={(e) => setDistrict(e.target.value)} required />
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">المنطقة</label>
+                <select value={district} onChange={(e) => setDistrict(e.target.value)} className="w-full bg-gray-50 text-gray-900 px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-semibold h-[38px] cursor-pointer">
+                  {["محطة", "شارع سيد", "المكتبات", "فريال"].map((areaOpt) => (
+                    <option key={areaOpt} value={areaOpt}>{areaOpt}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Inp label="تفاصيل العنوان بالكامل" placeholder="رقم العمارة، الطابق، اسم الشارع" value={address} onChange={(e) => setAddress(e.target.value)} required />
@@ -538,12 +548,28 @@ export default function UnitFormPage({ onNavigate, embedded = false }) {
               <div className="grid grid-cols-2 gap-3">
                 <input type="file" ref={fileInputRef1} accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 1)} />
                 <div onClick={() => fileInputRef1.current.click()} className="aspect-video bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer overflow-hidden relative">
-                  {coverImage1 ? <img src={coverImage1} alt="Cover 1" className="w-full h-full object-cover" /> : <><Camera className="w-4 h-4 text-gray-400" /><span className="text-[10px] text-gray-500 font-bold">الصورة الأولى</span></>}
+                  {coverImage1 ? (
+                    <img 
+                      src={coverImage1.startsWith('http') || coverImage1.startsWith('data:') ? coverImage1 : `${BACKEND_URL}/uploads/units/${coverImage1}`} 
+                      alt="Cover 1" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <><Camera className="w-4 h-4 text-gray-400" /><span className="text-[10px] text-gray-500 font-bold">الصورة الأولى</span></>
+                  )}
                 </div>
 
                 <input type="file" ref={fileInputRef2} accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 2)} />
                 <div onClick={() => fileInputRef2.current.click()} className="aspect-video bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer overflow-hidden relative">
-                  {coverImage2 ? <img src={coverImage2} alt="Cover 2" className="w-full h-full object-cover" /> : <><Camera className="w-4 h-4 text-gray-400" /><span className="text-[10px] text-gray-500 font-bold">الصورة الثانية</span></>}
+                  {coverImage2 ? (
+                    <img 
+                      src={coverImage2.startsWith('http') || coverImage2.startsWith('data:') ? coverImage2 : `${BACKEND_URL}/uploads/units/${coverImage2}`} 
+                      alt="Cover 2" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <><Camera className="w-4 h-4 text-gray-400" /><span className="text-[10px] text-gray-500 font-bold">الصورة الثانية</span></>
+                  )}
                 </div>
               </div>
             </div>

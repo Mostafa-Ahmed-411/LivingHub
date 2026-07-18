@@ -8,7 +8,9 @@ import {
   Zap,
   FileText,
   Shield,
-  Settings
+  Settings,
+  User,
+  Plus
 } from "lucide-react";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
@@ -37,11 +39,13 @@ export default function AdminDashboard({ onNavigate }) {
     { id: "dashboard", label: "Dashboard", icon: BarChart2, badge: 0 },
     { id: "pending", label: "Pending Approvals", icon: AlertCircle, badge: pendingCount },
     { id: "users", label: "Users", icon: Users, badge: 0 },
+    { id: "add-unit", label: "Add Unit", icon: Plus, badge: 0 },
     { id: "units", label: "Units", icon: Building2, badge: 0 },
     { id: "payments", label: "Payments", icon: CreditCard, badge: 0 },
     { id: "ads", label: "Advertisements", icon: Zap, badge: 0 },
     { id: "reports", label: "Reports", icon: FileText, badge: 0 },
     { id: "audit", label: "Audit Logs", icon: Shield, badge: 0 },
+    { id: "profile", label: "Profile", icon: User, badge: 0 },
     { id: "settings", label: "Settings", icon: Settings, badge: 0 }
   ];
 

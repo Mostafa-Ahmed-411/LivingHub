@@ -178,7 +178,7 @@ export default function AdminDashboardTab() {
               <CreditCard className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-2xl font-black text-gray-900">{stats.pendingPayments || 4}</p>
+              <p className="text-2xl font-black text-gray-900">{stats.pendingPayments || 0}</p>
               <p className="text-sm font-medium text-gray-500 line-clamp-1">Pending Payments</p>
             </div>
           </button>

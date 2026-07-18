@@ -216,6 +216,9 @@ const seedDemoData = async () => {
     for (const un of unitsData) {
       let u = await Unit.findOne({ description: un.description });
       if (!u) {
+        if (!un.title) {
+          un.title = `${un.unitType.charAt(0).toUpperCase() + un.unitType.slice(1)} in ${un.address.city}`;
+        }
         u = await Unit.create(un);
       }
       units.push(u);

@@ -9,6 +9,7 @@ const unitController = require('../controllers/unitController');
 const router = express.Router();
 
 const addUnitValidation = [
+  body('title').notEmpty().withMessage('Title is required'),
   body('unitType').isIn(['apartment', 'room', 'studio', 'bed']).withMessage('Invalid unit type'),
   body('listingType').isIn(['rent', 'sale']).withMessage('Invalid listing type'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
@@ -17,6 +18,7 @@ const addUnitValidation = [
 ];
 
 const editUnitValidation = [
+  body('title').optional().notEmpty().withMessage('Title cannot be empty'),
   body('unitType').optional().isIn(['apartment', 'room', 'studio', 'bed']).withMessage('Invalid unit type'),
   body('listingType').optional().isIn(['rent', 'sale']).withMessage('Invalid listing type'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),

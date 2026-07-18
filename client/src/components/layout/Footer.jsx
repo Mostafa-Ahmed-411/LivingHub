@@ -1,27 +1,30 @@
 import React from "react";
 import { Building2, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function Footer({ onNavigate }) {
+  const { t, lang } = useLanguage();
+
   const columns = [
     {
-      title: "Find Housing",
+      title: t("footer.findHousing"),
       links: [
-        { label: "Browse Units", action: () => onNavigate("search") },
-        { label: "Student Community", action: () => onNavigate("community") }
+        { label: t("footer.browseUnits"), action: () => onNavigate("search") },
+        { label: t("footer.studentCommunity"), action: () => onNavigate("community") }
       ]
     },
     {
-      title: "Partners",
+      title: t("footer.partners"),
       links: [
-        { label: "List Your Property", action: () => onNavigate("unit-form") },
-        { label: "Owner Dashboard", action: () => onNavigate("owner") }
+        { label: t("footer.listProperty"), action: () => onNavigate("unit-form") },
+        { label: t("footer.ownerDashboard"), action: () => onNavigate("owner") }
       ]
     },
     {
-      title: "About",
+      title: t("footer.about"),
       links: [
-        { label: "About Maeesha", action: () => onNavigate("about") },
-        { label: "How it Works", action: () => onNavigate("about") }
+        { label: t("footer.aboutMaeesha"), action: () => onNavigate("about") },
+        { label: t("footer.howItWorks"), action: () => onNavigate("about") }
       ]
     }
   ];
@@ -50,8 +53,7 @@ export default function Footer({ onNavigate }) {
               </span>
             </button>
             <p className="text-sm leading-relaxed mb-6 text-gray-500">
-              Egypt's premier student housing platform connecting students with safe, verified
-              accommodations.
+              {t("footer.desc")}
             </p>
             <div className="flex gap-3">
               {socialLinks.map((s, idx) => (
@@ -87,13 +89,13 @@ export default function Footer({ onNavigate }) {
         </div>
 
         <div className="border-t border-gray-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-600">&copy; 2026 Maeesha. All rights reserved.</p>
+          <p className="text-sm text-gray-600">&copy; 2026 Maeesha. {lang === "en" ? "All rights reserved." : "جميع الحقوق محفوظة."}</p>
           <div className="flex gap-6 text-sm">
             <button onClick={() => onNavigate("about")} className="text-gray-500 hover:text-white transition-colors cursor-pointer bg-transparent border-0 p-0">
-              Privacy Policy
+              {t("footer.privacy")}
             </button>
             <button onClick={() => onNavigate("about")} className="text-gray-500 hover:text-white transition-colors cursor-pointer bg-transparent border-0 p-0">
-              Terms of Service
+              {t("footer.terms")}
             </button>
           </div>
         </div>

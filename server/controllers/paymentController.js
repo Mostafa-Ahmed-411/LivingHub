@@ -1,6 +1,7 @@
 const Payment = require('../models/Payment');
 const Unit = require('../models/Unit');
 const AppError = require('../utils/AppError');
+const { notifyAdmins } = require('../utils/notifications');
 
 const initiatePayment = async (req, res, next) => {
   try {
@@ -35,6 +36,8 @@ const initiatePayment = async (req, res, next) => {
       transactionId
     });
 
+    await notifyAdmins(req.app, 'admin_request', 'New payment proof uploaded for unit review', payment._id);
+
     res.status(201).json({ message: 'Payment submitted successfully and is pending admin review', payment });
   } catch (error) {
     next(error);
@@ -53,4 +56,38 @@ const getMyPayments = async (req, res, next) => {
   }
 };
 
-module.exports = { initiatePayment, getMyPayments };
+const buyContactPackage = async (req, res, next) => {
+  try {
+    const { method, transactionId } = req.body;
+
+    if (!req.file) {
+      throw new AppError('Payment proof image is required', 400);
+    }
+
+    const existingPayment = await Payment.findOne({ 
+      ownerId: req.user._id, 
+      paymentType: 'contact_package', 
+      status: 'pending' 
+    });
+    if (existingPayment) {
+      throw new AppError('A payment is already pending review for your contact package', 400);
+    }
+
+    const payment = await Payment.create({
+      ownerId: req.user._id,
+      amount: 20,
+      method,
+      proofImage: req.file.filename,
+      transactionId,
+      paymentType: 'contact_package'
+    });
+
+    await notifyAdmins(req.app, 'admin_request', 'New payment proof uploaded for contact package', payment._id);
+
+    res.status(201).json({ message: 'Payment submitted successfully and is pending admin review', payment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { initiatePayment, getMyPayments, buyContactPackage };

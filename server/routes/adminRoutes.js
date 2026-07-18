@@ -21,6 +21,14 @@ const adValidation = [
   validate
 ];
 
+const adUpdateValidation = [
+  body('title').optional().trim().notEmpty().withMessage('Title cannot be empty'),
+  body('targetLocation').optional().isIn(['home', 'search', 'dashboard']).withMessage('Invalid location'),
+  body('startDate').optional().isISO8601().withMessage('Invalid start date format'),
+  body('endDate').optional().isISO8601().withMessage('Invalid end date format'),
+  validate
+];
+
 // All admin routes require admin role
 router.use(auth, checkRole('admin'));
 
@@ -60,6 +68,16 @@ router.post('/users/:id/flag', adminController.flagUser);
 // Ads Management
 router.post('/ads', upload('ads').single('image'), adValidation, adminController.createAd);
 router.get('/ads', adminController.getAds);
+router.patch('/ads/:id', upload('ads').single('image'), adUpdateValidation, adminController.updateAd);
+router.delete('/ads/:id', adminController.deleteAd);
 router.post('/ads/:id/toggle', adminController.toggleAdStatus);
+
+// Audit Logs
+router.get('/audit-logs', adminController.getAuditLogs);
+
+// Reports
+router.get('/reports', adminController.getReports);
+router.patch('/reports/:id/resolve', adminController.resolveReport);
+router.patch('/reports/:id/dismiss', adminController.dismissReport);
 
 module.exports = router;

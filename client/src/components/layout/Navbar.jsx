@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { Building2, Bell, Menu, X, MessageSquare, LogOut, Sun, Moon } from "lucide-react";
+import React, { useState, useEffect, useContext } from "react";
+import { Building2, Bell, Menu, X, MessageSquare, LogOut, Sun, Moon, Globe } from "lucide-react";
 import Btn from "../common/Btn";
 import useAuth from "../../hooks/useAuth";
+import { useLanguage } from "../../context/LanguageContext";
+import { NotificationContext } from "../../context/NotificationContext";
 
 export default function Navbar({ onNavigate, currentPage }) {
   const [open, setOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [showMsgDropdown, setShowMsgDropdown] = useState(false);
-  const [lang, setLang] = useState("en");
-  const [theme, setTheme] = useState("light");
+  const { lang, setLang, t } = useLanguage();
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const { user: authUser, logout } = useAuth();
-  
   const [user, setUser] = useState(authUser);
-  // 💡 إضافة State لمراقبة وجود إشعارات غير مقروءة بدقة
-  const [hasUnread, setHasUnread] = useState(false);
+  const { notifications, unreadCount, markAsRead } = useContext(NotificationContext);
 
   useEffect(() => {
     const updateNavbarData = () => {
@@ -25,15 +25,6 @@ export default function Navbar({ onNavigate, currentPage }) {
         } else if (authUser) {
           setUser(authUser);
         }
-
-        // تشيك ديناميكي مستمر: لو فيه إشعارات غير مقروءة اللمبة تنور، لو اتصفرت تطفي فوراً
-        const savedNotifs = localStorage.getItem("app_notifications");
-        if (savedNotifs) {
-          const notifsList = JSON.parse(savedNotifs);
-          setHasUnread(notifsList.some(n => !n.read));
-        } else {
-          setHasUnread(false);
-        }
       } catch (e) {
         console.error(e);
       }
@@ -41,9 +32,27 @@ export default function Navbar({ onNavigate, currentPage }) {
     
     updateNavbarData();
     
+    // Sync theme if changed elsewhere
+    const handleGlobalThemeChange = () => {
+      setTheme(localStorage.getItem("theme") || "light");
+    };
+
     window.addEventListener("storage", updateNavbarData);
-    return () => window.removeEventListener("storage", updateNavbarData);
+    window.addEventListener("storage", handleGlobalThemeChange);
+    return () => {
+      window.removeEventListener("storage", updateNavbarData);
+      window.removeEventListener("storage", handleGlobalThemeChange);
+    };
   }, [authUser, currentPage]);
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const handleLogout = async () => {
     try {
@@ -61,11 +70,10 @@ export default function Navbar({ onNavigate, currentPage }) {
   const toggleTheme = () => {
     const nextTheme = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
-    if (nextTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    // Dispatch event to notify other components instantly
+    setTimeout(() => {
+      window.dispatchEvent(new Event("storage"));
+    }, 0);
   };
 
   const getInitials = (name) => {
@@ -90,12 +98,14 @@ export default function Navbar({ onNavigate, currentPage }) {
     : "";
 
   const navItems = [
-    { label: "Search", page: "search" },
-    { label: "About Maeesha", page: "about" }
+    { label: t("nav.search"), page: "search" },
+    { label: t("nav.about"), page: "about" }
   ];
 
   if (user) {
-    navItems.push({ label: "Community", page: "community" });
+    navItems.push({ label: t("nav.community"), page: "community" });
+    const dashboardBase = user.role === "owner" ? "/owner" : user.role === "admin" ? "/admin" : "/student";
+    navItems.push({ label: t("nav.dashboard"), page: dashboardBase });
   }
 
   return (
@@ -131,8 +141,13 @@ export default function Navbar({ onNavigate, currentPage }) {
         {/* Action Right Area */}
         <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-2 mr-2">
-            <button onClick={() => setLang(lang === "en" ? "ar" : "en")} className="px-2 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-0">
-              {lang === "en" ? "العربية" : "English"}
+            <button 
+              onClick={() => setLang(lang === "en" ? "ar" : "en")} 
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent flex items-center gap-1"
+              title={lang === "en" ? "Switch to Arabic" : "Switch to English"}
+            >
+              <Globe className="w-4 h-4" />
+              <span className="text-xs font-semibold uppercase">{lang}</span>
             </button>
 
             <button onClick={toggleTheme} className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent">
@@ -151,14 +166,14 @@ export default function Navbar({ onNavigate, currentPage }) {
                     <div className="fixed inset-0 z-40" onClick={() => setShowMsgDropdown(false)} />
                     <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden">
                       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                        <span className="font-semibold text-gray-900 dark:text-white">Messages</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{t("nav.messages")}</span>
                         <div className="flex items-center gap-3">
-                          <button onClick={() => { onNavigate("chat"); setShowMsgDropdown(false); }} className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer bg-transparent border-0 p-0">Open in page</button>
+                          <button onClick={() => { onNavigate("chat"); setShowMsgDropdown(false); }} className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer bg-transparent border-0 p-0">{t("nav.openInPage")}</button>
                           <button onClick={() => setShowMsgDropdown(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-0 p-0"><X className="w-4 h-4" /></button>
                         </div>
                       </div>
                       <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                        No new messages
+                        {t("nav.noMessages")}
                       </div>
                     </div>
                   </>
@@ -168,22 +183,52 @@ export default function Navbar({ onNavigate, currentPage }) {
               <div className="relative">
                 <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent">
                   <Bell className="w-5 h-5" />
-                  {/* 💡 البادج الأحمر هيظهر بنبض خفيف فقط لو فيه إشعارات unread */}
-                  {hasUnread && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
                 {showNotifDropdown && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowNotifDropdown(false)} />
                     <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden">
                       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                        <span className="font-semibold text-gray-900 dark:text-white">Notifications</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{t("nav.notifications")}</span>
                         <div className="flex items-center gap-3">
-                          <button onClick={() => { onNavigate("notifications"); setShowNotifDropdown(false); }} className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer bg-transparent border-0 p-0">Open in page</button>
+                          <button onClick={() => { onNavigate("notifications"); setShowNotifDropdown(false); }} className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer bg-transparent border-0 p-0">{t("nav.openInPage")}</button>
                           <button onClick={() => setShowNotifDropdown(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-0 p-0"><X className="w-4 h-4" /></button>
                         </div>
                       </div>
-                      <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                        No new notifications
+                      <div className="max-h-64 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                            {t("nav.noNotifications")}
+                          </div>
+                        ) : (
+                          notifications.slice(0, 5).map((n) => (
+                            <div
+                              key={n._id}
+                              onClick={() => {
+                                markAsRead(n._id);
+                                setShowNotifDropdown(false);
+                              }}
+                              className={`p-3 border-b border-gray-50 dark:border-gray-700 flex items-start gap-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer ${
+                                n.isRead ? "opacity-60" : "bg-blue-50/20"
+                              }`}
+                            >
+                              <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-900 dark:text-white font-medium line-clamp-2">
+                                  {n.message}
+                                </p>
+                                <span className="text-[10px] text-gray-400">
+                                  {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   </>
@@ -229,30 +274,33 @@ export default function Navbar({ onNavigate, currentPage }) {
                     <div className="py-1">
                       <button
                         onClick={() => {
-                          onNavigate("profile");
+                          const base = user?.role === "owner" ? "/owner" : user?.role === "admin" ? "/admin" : "/student";
+                          onNavigate(`${base}/profile`);
                           setShowDropdown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer bg-transparent border-0"
                       >
-                        Profile
+                        {t("nav.profile")}
                       </button>
                       <button
                         onClick={() => {
-                          onNavigate(user.role === "owner" ? "owner" : "student");
+                          const base = user?.role === "owner" ? "/owner" : user?.role === "admin" ? "/admin" : "/student";
+                          onNavigate(base);
                           setShowDropdown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer bg-transparent border-0"
                       >
-                        Dashboard
+                        {t("nav.dashboard")}
                       </button>
                       <button
                         onClick={() => {
-                          onNavigate("settings");
+                          const base = user?.role === "owner" ? "/owner" : user?.role === "admin" ? "/admin" : "/student";
+                          onNavigate(`${base}/settings`);
                           setShowDropdown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer bg-transparent border-0"
                       >
-                        Settings
+                        {t("nav.settings")}
                       </button>
                     </div>
 
@@ -264,7 +312,7 @@ export default function Navbar({ onNavigate, currentPage }) {
                         }}
                         className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer font-semibold bg-transparent border-0 text-left"
                       >
-                        <LogOut className="w-4 h-4 mr-2" /> Logout
+                        <LogOut className="w-4 h-4 mr-2" /> {t("nav.signOut")}
                       </button>
                     </div>
                   </div>
@@ -274,7 +322,7 @@ export default function Navbar({ onNavigate, currentPage }) {
           ) : (
             <div className="hidden md:flex items-center gap-2">
               <Btn variant="primary" size="sm" onClick={() => onNavigate("login")}>
-                Login
+                {lang === "en" ? "Login" : "تسجيل الدخول"}
               </Btn>
             </div>
           )}

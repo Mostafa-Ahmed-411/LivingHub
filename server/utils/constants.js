@@ -29,7 +29,9 @@ const NOTIFICATION_TYPES = [
   'payment_rejected',
   'booking_confirmed',
   'feature_approved',
-  'feature_rejected'
+  'feature_rejected',
+  'admin_request',
+  'push_ad'
 ];
 
 const AUDIT_ACTIONS = [
@@ -43,10 +45,16 @@ const AUDIT_ACTIONS = [
   'status_change',
   'request_feature',
   'approve_feature',
-  'reject_feature'
+  'reject_feature',
+  'resolve_report',
+  'dismiss_report'
 ];
 
 const AD_LOCATIONS = ['home', 'search', 'dashboard'];
+
+const REPORT_TYPES = ['unit', 'user', 'payment', 'other'];
+
+const REPORT_STATUSES = ['open', 'resolved', 'dismissed'];
 
 module.exports = {
   ROLES,
@@ -58,5 +66,7 @@ module.exports = {
   PAYMENT_STATUSES,
   NOTIFICATION_TYPES,
   AUDIT_ACTIONS,
-  AD_LOCATIONS
+  AD_LOCATIONS,
+  REPORT_TYPES,
+  REPORT_STATUSES
 };

@@ -14,13 +14,16 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import PropertyCard from "../components/common/PropertyCard";
 import Btn from "../components/common/Btn";
-import { cities, propertyTypes } from "../data/mockData";
+import { cities, propertyTypes } from "../constants/staticData";
 import { searchUnitsAPI } from "../api/search";
+import { mapBackendUnitToProperty } from "../utils/propertyMapper";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function SearchPage({ onNavigate }) {
   const location = useLocation();
   const initialParams = location.state;
   const [filter, setFilter] = useState("All");
+  const { t, lang, isRTL } = useLanguage();
 
   // Sidebar collapse state
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -80,12 +83,7 @@ export default function SearchPage({ onNavigate }) {
   ]);
 
   const districtMap = {
-    Cairo: ["Zamalek", "Nasr City", "Heliopolis", "Maadi", "New Cairo"],
-    Giza: ["Mohandessin", "Dokki", "Haram", "Sheikh Zayed"],
-    Assiut: ["Said", "El-Mahata", "Al-Azhar", "City"],
-    Alexandria: ["Sidi Gaber", "Smouha", "Miami"],
-    Mansoura: ["Gayea", "University Area"],
-    Tanta: ["Saeed St", "El-Nahas"]
+    Assiut: ["محطة", "شارع سيد", "المكتبات", "فريال"]
   };
 
   const handleGovernorateChange = (gov) => {
@@ -138,9 +136,6 @@ export default function SearchPage({ onNavigate }) {
         if (selectedFloors.length > 0) {
           params.floors = selectedFloors.join(",");
         }
-        if (minRating > 0) {
-          params.minRating = minRating;
-        }
         params.availability = availability;
         params.sort = sort;
 
@@ -173,33 +168,16 @@ export default function SearchPage({ onNavigate }) {
     page
   ]);
 
-  // Map backend model to frontend PropertyCard structure
-  const mapBackendUnitToProperty = (u) => {
-    return {
-      id: u._id,
-      _id: u._id,
-      title: u.description || `${u.unitType.charAt(0).toUpperCase() + u.unitType.slice(1)} in ${u.address.city}`,
-      type: u.unitType.charAt(0).toUpperCase() + u.unitType.slice(1),
-      listingFor: u.listingType === "rent" ? "Rent" : "Sale",
-      location: `${u.address.city}, ${u.address.governorate}`,
-      governorate: u.address.governorate,
-      district: u.address.city,
-      price: u.price,
-      period: u.listingType === "rent" ? "month" : "total",
-      floor: u.floorNumber || 1,
-      image: u.images?.[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&fit=crop",
-      roomBedNumber: u.bedsPerRoom || 1,
-      roomBeds: u.bedsPerRoom || 1,
-      aptPeople: (u.bedsPerRoom || 1) * (u.roomsPerApartment || 1),
-      beds: u.roomsPerApartment || u.bedsPerRoom || 1,
-      area: u.specifications?.area || 100,
-      rating: u.rating || 4.5,
-      verified: u.status === "available"
-    };
-  };
-
   const displayedUnits = units.map(mapBackendUnitToProperty);
   const floorOptions = [...Array.from({ length: 15 }, (_, i) => String(i + 1)), "+15"];
+
+  const typeOptionsTranslation = {
+    "All": lang === "en" ? "All" : "الكل",
+    "Apartment": lang === "en" ? "Apartment" : "شقة",
+    "Room": lang === "en" ? "Room" : "غرفة",
+    "Studio": lang === "en" ? "Studio" : "استوديو",
+    "Bed": lang === "en" ? "Bed" : "سرير"
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50 flex flex-col">
@@ -213,9 +191,9 @@ export default function SearchPage({ onNavigate }) {
           <button
             onClick={() => setIsCollapsed(false)}
             className="fixed left-0 top-24 z-40 bg-white border border-l-0 border-gray-200 p-2.5 rounded-r-xl shadow-md cursor-pointer hover:bg-gray-50 flex items-center justify-center transition-all duration-300 text-blue-600 hover:text-blue-700"
-            title="Show Filters"
+            title={lang === "en" ? "Show Filters" : "إظهار الفلاتر"}
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className={`w-5 h-5 ${isRTL ? "rotate-180" : ""}`} />
           </button>
         )}
 
@@ -229,21 +207,21 @@ export default function SearchPage({ onNavigate }) {
         >
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <span className="font-bold text-gray-900 flex items-center gap-1.5 text-sm">
-              <Sliders className="w-3.5 h-3.5 text-blue-600" /> Filters
+              <Sliders className="w-3.5 h-3.5 text-blue-600" /> {t("search.filters")}
             </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={resetFilters}
                 className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-transparent border-0"
               >
-                <RefreshCw className="w-2.5 h-2.5" /> Reset
+                <RefreshCw className="w-2.5 h-2.5" /> {t("search.reset")}
               </button>
               <button
                 onClick={() => setIsCollapsed(true)}
                 className="p-1 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-lg cursor-pointer border-0"
-                title="Collapse Filters"
+                title={t("search.collapse")}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
               </button>
             </div>
           </div>
@@ -252,14 +230,14 @@ export default function SearchPage({ onNavigate }) {
           <div className="space-y-2.5">
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                Governorate
+                {t("search.governorate")}
               </label>
               <select
                 value={governorate}
                 onChange={(e) => handleGovernorateChange(e.target.value)}
                 className="w-full bg-gray-50 text-gray-900 px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium cursor-pointer"
               >
-                <option value="All">All Governorates</option>
+                <option value="All">{t("featured.allGovs")}</option>
                 {cities.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -270,7 +248,7 @@ export default function SearchPage({ onNavigate }) {
 
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                District / Area
+                {t("search.district")}
               </label>
               <select
                 value={district}
@@ -278,7 +256,7 @@ export default function SearchPage({ onNavigate }) {
                 disabled={governorate === "All"}
                 className="w-full bg-gray-50 text-gray-900 px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <option value="All">All Areas</option>
+                <option value="All">{lang === "en" ? "All Areas" : "كل الأحياء"}</option>
                 {governorate !== "All" &&
                   districtMap[governorate]?.map((d) => (
                     <option key={d} value={d}>
@@ -292,7 +270,7 @@ export default function SearchPage({ onNavigate }) {
           {/* Nearest University */}
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-              Nearest University
+              {t("search.nearestUni")}
             </label>
             <input
               type="text"
@@ -303,79 +281,35 @@ export default function SearchPage({ onNavigate }) {
             />
           </div>
 
-          {/* Rating Filter (Interactive Stars) */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                Minimum Rating
-              </label>
-              {minRating > 0 && (
-                <button
-                  onClick={() => setMinRating(0)}
-                  className="text-[9px] font-bold text-blue-600 hover:text-blue-700 underline cursor-pointer bg-transparent border-0"
-                >
-                  Reset Rate
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-1 py-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setMinRating(star)}
-                  className="text-gray-300 hover:text-amber-400 transition-colors p-0.5 cursor-pointer bg-transparent border-0"
-                  title={`${star} Star${star > 1 ? "s" : ""} & Above`}
-                >
-                  <svg
-                    className={`w-5 h-5 transition-all ${
-                      star <= minRating
-                        ? "fill-amber-400 text-amber-400 scale-110"
-                        : "fill-transparent text-gray-300 hover:scale-105"
-                    }`}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                </button>
-              ))}
-              {minRating > 0 && (
-                <span className="text-xs font-semibold text-amber-600 ml-1">
-                  {minRating}.0+
-                </span>
-              )}
-            </div>
-          </div>
 
           {/* Price Range */}
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-              Price (EGP)
+              {t("search.priceRange")}
             </label>
             <div className="grid grid-cols-2 gap-1.5">
               <div className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">Min</span>
+                <span className={`absolute ${isRTL ? "right-2.5" : "left-2.5"} top-1/2 -translate-y-1/2 text-gray-400 text-[10px]`}>
+                  {lang === "en" ? "Min" : "الأدنى"}
+                </span>
                 <input
                   type="number"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
                   placeholder="0"
-                  className="w-full bg-gray-50 text-gray-900 pl-8 pr-2 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className={`w-full bg-gray-50 text-gray-900 ${isRTL ? "pr-12 pl-2" : "pl-12 pr-2"} py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500`}
                 />
               </div>
               <div className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[10px]">Max</span>
+                <span className={`absolute ${isRTL ? "right-2.5" : "left-2.5"} top-1/2 -translate-y-1/2 text-gray-400 text-[10px]`}>
+                  {lang === "en" ? "Max" : "الأقصى"}
+                </span>
                 <input
                   type="number"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                   placeholder="10K"
-                  className="w-full bg-gray-50 text-gray-900 pl-8 pr-2 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className={`w-full bg-gray-50 text-gray-900 ${isRTL ? "pr-12 pl-2" : "pl-12 pr-2"} py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500`}
                 />
               </div>
             </div>
@@ -384,7 +318,7 @@ export default function SearchPage({ onNavigate }) {
           {/* Listing Type */}
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-              Listing Type
+              {t("search.listingFor")}
             </label>
             <div className="flex gap-1 bg-gray-100 rounded-xl p-0.5">
               {["All", "Rent", "Sale"].map((typeOption) => (
@@ -398,7 +332,7 @@ export default function SearchPage({ onNavigate }) {
                       : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {typeOption === "Sale" ? "Own" : typeOption}
+                  {typeOption === "All" ? (lang === "en" ? "All" : "الكل") : typeOption === "Rent" ? (lang === "en" ? "Rent" : "إيجار") : (lang === "en" ? "Own" : "تمليك")}
                 </button>
               ))}
             </div>
@@ -407,15 +341,15 @@ export default function SearchPage({ onNavigate }) {
           {/* Availability Toggle */}
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-              Availability
+              {t("search.availability")}
             </label>
             <select
               value={availability}
               onChange={(e) => setAvailability(e.target.value)}
               className="w-full bg-gray-50 text-gray-900 px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium cursor-pointer"
             >
-              <option value="available">Available Only</option>
-              <option value="all">All Statuses</option>
+              <option value="available">{t("search.available")}</option>
+              <option value="all">{lang === "en" ? "All Statuses" : "كل الحالات"}</option>
             </select>
           </div>
 
@@ -423,7 +357,7 @@ export default function SearchPage({ onNavigate }) {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                Available Period
+                {t("search.availableFrom")}
               </label>
               {(availFrom || availTo) && (
                 <button
@@ -433,27 +367,31 @@ export default function SearchPage({ onNavigate }) {
                   }}
                   className="text-[9px] font-bold text-blue-600 hover:text-blue-700 underline cursor-pointer bg-transparent border-0"
                 >
-                  Reset
+                  {t("search.reset")}
                 </button>
               )}
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               <div className="relative">
-                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-gray-400 text-[8px] font-bold">From</span>
+                <span className={`absolute ${isRTL ? "right-1.5" : "left-1.5"} top-1/2 -translate-y-1/2 text-gray-400 text-[8px] font-bold`}>
+                  {lang === "en" ? "From" : "من"}
+                </span>
                 <input
                   type="date"
                   value={availFrom}
                   onChange={(e) => setAvailFrom(e.target.value)}
-                  className="w-full bg-gray-50 text-gray-900 pl-7 pr-1 py-2 rounded-xl border border-gray-200 text-[9px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                  className={`w-full bg-gray-50 text-gray-900 ${isRTL ? "pr-7 pl-1" : "pl-7 pr-1"} py-2 rounded-xl border border-gray-200 text-[9px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium`}
                 />
               </div>
               <div className="relative">
-                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-gray-400 text-[8px] font-bold">To</span>
+                <span className={`absolute ${isRTL ? "right-1.5" : "left-1.5"} top-1/2 -translate-y-1/2 text-gray-400 text-[8px] font-bold`}>
+                  {lang === "en" ? "To" : "إلى"}
+                </span>
                 <input
                   type="date"
                   value={availTo}
                   onChange={(e) => setAvailTo(e.target.value)}
-                  className="w-full bg-gray-50 text-gray-900 pl-5 pr-1 py-2 rounded-xl border border-gray-200 text-[9px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                  className={`w-full bg-gray-50 text-gray-900 ${isRTL ? "pr-7 pl-1" : "pl-7 pr-1"} py-2 rounded-xl border border-gray-200 text-[9px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium`}
                 />
               </div>
             </div>
@@ -463,14 +401,14 @@ export default function SearchPage({ onNavigate }) {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                Floor
+                {t("search.floorLevel")}
               </label>
               {selectedFloors.length > 0 && (
                 <button
                   onClick={() => setSelectedFloors([])}
                   className="text-[9px] font-bold text-blue-600 hover:text-blue-700 underline cursor-pointer bg-transparent border-0"
                 >
-                  Reset Floor
+                  {t("search.reset")}
                 </button>
               )}
             </div>
@@ -484,7 +422,7 @@ export default function SearchPage({ onNavigate }) {
                     className="w-3.5 h-3.5 rounded border-gray-300 accent-blue-600 cursor-pointer"
                   />
                   <span className="text-xs text-gray-600 font-medium">
-                    {f === "+15" ? "Floor +15" : `Floor ${f}`}
+                    {f === "+15" ? (lang === "en" ? "Floor +15" : "الطابق +15") : (lang === "en" ? `Floor ${f}` : `الطابق ${f}`)}
                   </span>
                 </label>
               ))}
@@ -502,11 +440,11 @@ export default function SearchPage({ onNavigate }) {
                   className="text-2xl font-extrabold text-gray-900"
                   style={{ fontFamily: "'Poppins', sans-serif" }}
                 >
-                  Search Properties
+                  {lang === "en" ? "Search Properties" : "بحث العقارات"}
                 </h1>
               </div>
               <p className="text-gray-500 text-sm">
-                Showing {pagination.total} properties in Egypt
+                {lang === "en" ? `Showing ${pagination.total} properties in Egypt` : `نعرض ${pagination.total} عقاراً في مصر`}
               </p>
             </div>
 
@@ -517,12 +455,12 @@ export default function SearchPage({ onNavigate }) {
                 onChange={(e) => setSort(e.target.value)}
                 className="bg-white text-gray-900 px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-semibold cursor-pointer"
               >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-                <option value="nearest_university">Nearest to University</option>
-                <option value="farthest_university">Farthest from University</option>
+                <option value="newest">{t("search.newest")}</option>
+                <option value="oldest">{lang === "en" ? "Oldest" : "الأقدم أولاً"}</option>
+                <option value="price_asc">{t("search.priceLowHigh")}</option>
+                <option value="price_desc">{t("search.priceHighLow")}</option>
+                <option value="nearest_university">{lang === "en" ? "Nearest to University" : "الأقرب للجامعة"}</option>
+                <option value="farthest_university">{lang === "en" ? "Farthest from University" : "الأبعد عن الجامعة"}</option>
               </select>
 
               <div className="flex gap-2 overflow-x-auto pb-1.5 md:pb-0 scrollbar-none">
@@ -536,7 +474,7 @@ export default function SearchPage({ onNavigate }) {
                         : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                     }`}
                   >
-                    {t}
+                    {typeOptionsTranslation[t]}
                   </button>
                 ))}
               </div>
@@ -547,14 +485,14 @@ export default function SearchPage({ onNavigate }) {
           {loading ? (
             <div className="text-center py-20 bg-white border border-gray-100 rounded-2xl p-8">
               <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-              <p className="font-semibold text-gray-900">Loading properties...</p>
+              <p className="font-semibold text-gray-900">{lang === "en" ? "Loading properties..." : "جاري تحميل العقارات..."}</p>
             </div>
           ) : error ? (
             <div className="text-center py-16 bg-red-50 border border-red-200 rounded-2xl p-8 text-red-700">
-              <p className="font-bold text-lg mb-2">Something went wrong</p>
+              <p className="font-bold text-lg mb-2">{lang === "en" ? "Something went wrong" : "حدث خطأ ما"}</p>
               <p className="text-sm mb-4">{error}</p>
               <Btn variant="outline" onClick={() => window.location.reload()}>
-                Try Again
+                {lang === "en" ? "Try Again" : "إعادة المحاولة"}
               </Btn>
             </div>
           ) : displayedUnits.length > 0 ? (
@@ -573,7 +511,7 @@ export default function SearchPage({ onNavigate }) {
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     className="px-4 py-2 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer flex items-center gap-1"
                   >
-                    <ChevronLeft className="w-4 h-4" /> Previous
+                    <ChevronLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} /> {lang === "en" ? "Previous" : "السابق"}
                   </button>
                   
                   <div className="flex items-center gap-1.5">
@@ -597,7 +535,7 @@ export default function SearchPage({ onNavigate }) {
                     onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
                     className="px-4 py-2 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer flex items-center gap-1"
                   >
-                    Next <ChevronRight className="w-4 h-4" />
+                    {lang === "en" ? "Next" : "التالي"} <ChevronRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
                   </button>
                 </div>
               )}
@@ -605,12 +543,12 @@ export default function SearchPage({ onNavigate }) {
           ) : (
             <div className="text-center py-16 bg-white border border-gray-100 rounded-2xl p-8">
               <SlidersHorizontal className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="font-semibold text-gray-900 text-lg">No properties found</p>
+              <p className="font-semibold text-gray-900 text-lg">{lang === "en" ? "No properties found" : "لم يتم العثور على عقارات"}</p>
               <p className="text-gray-500 text-sm mt-1 mb-5">
-                Try adjusting or resetting your filter criteria.
+                {t("search.noResults")}
               </p>
               <Btn variant="primary" onClick={resetFilters}>
-                Clear All Filters
+                {lang === "en" ? "Clear All Filters" : "مسح جميع الفلاتر"}
               </Btn>
             </div>
           )}

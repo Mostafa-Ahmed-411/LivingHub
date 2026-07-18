@@ -2,10 +2,11 @@ const Unit = require('../models/Unit');
 const Settings = require('../models/Settings');
 const AuditLog = require('../models/AuditLog');
 const AppError = require('../utils/AppError');
+const { notifyAdmins } = require('../utils/notifications');
 
 const addUnit = async (req, res, next) => {
   try {
-    const { unitType, listingType, specifications, bedsPerRoom, roomsPerApartment,
+    const { title, unitType, listingType, specifications, bedsPerRoom, roomsPerApartment,
             floorNumber, address, price, description } = req.body;
 
     // Server-side validation: non-apartment units can only be rented
@@ -44,6 +45,7 @@ const addUnit = async (req, res, next) => {
 
     const unit = await Unit.create({
       ownerId: req.user._id,
+      title,
       unitType,
       listingType: unitType !== 'apartment' ? 'rent' : listingType,
       specifications: typeof specifications === 'string' ? JSON.parse(specifications) : specifications,
@@ -66,6 +68,10 @@ const addUnit = async (req, res, next) => {
       previousData: { status: null, newStatus: status }
     });
 
+    if (status === 'pending') {
+      await notifyAdmins(req.app, 'admin_request', `New unit pending approval: ${unit.title}`, unit._id);
+    }
+
     res.status(201).json({ message, unit });
   } catch (error) {
     next(error);
@@ -81,7 +87,20 @@ const getUnit = async (req, res, next) => {
       throw new AppError('Unit not found', 404);
     }
 
-    res.json({ unit });
+    const Review = require('../models/Review');
+    const reviews = await Review.find({ unitId: unit._id })
+      .populate('tenantId', 'fullName profileImage');
+
+    const unitObj = unit.toObject();
+    unitObj.reviewsList = reviews.map(r => ({
+      _id: r._id,
+      tenantName: r.tenantId?.fullName || 'Verified Tenant',
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt
+    }));
+
+    res.json({ unit: unitObj });
   } catch (error) {
     next(error);
   }
@@ -102,19 +121,43 @@ const editUnit = async (req, res, next) => {
     const restrictedStatuses = ['rented', 'sold'];
     const isRestricted = restrictedStatuses.includes(unit.status);
 
-    const { unitType, listingType, specifications, bedsPerRoom, roomsPerApartment,
+    const { title, unitType, listingType, specifications, bedsPerRoom, roomsPerApartment,
             floorNumber, address, price, description, isActive } = req.body;
 
-    if (isRestricted) {
-      // Only allow description and images changes for rented/sold units
-      if (unitType || listingType || price || address || floorNumber || bedsPerRoom || roomsPerApartment) {
-        throw new AppError('Only description and images can be edited for rented/sold units', 400);
+    const getUpdatedImages = () => {
+      let keepImages = [];
+      if (req.body.existingImages) {
+        const parsed = typeof req.body.existingImages === 'string'
+          ? JSON.parse(req.body.existingImages)
+          : req.body.existingImages;
+        
+        keepImages = parsed.map(img => {
+          if (!img) return null;
+          if (img.startsWith('http')) {
+            const parts = img.split('/uploads/units/');
+            return parts[parts.length - 1];
+          }
+          return img;
+        }).filter(Boolean);
       }
 
-      if (description !== undefined) unit.description = description;
-      if (req.files && req.files.length > 0) {
-        unit.images = req.files.map(f => f.filename);
+      const newFiles = req.files ? req.files.map(f => f.filename) : [];
+
+      if ((req.files && req.files.length > 0) || req.body.existingImages !== undefined) {
+        return [...keepImages, ...newFiles];
       }
+      return unit.images;
+    };
+
+    if (isRestricted) {
+      // Only allow description, images, and title changes for rented/sold units
+      if (unitType || listingType || price || address || floorNumber || bedsPerRoom || roomsPerApartment) {
+        throw new AppError('Only title, description and images can be edited for rented/sold units', 400);
+      }
+
+      if (title !== undefined) unit.title = title;
+      if (description !== undefined) unit.description = description;
+      unit.images = getUpdatedImages();
     } else {
       const previousData = unit.toObject();
       const needsReApproval = unit.status === 'available' &&
@@ -128,6 +171,7 @@ const editUnit = async (req, res, next) => {
         }
         unit.unitType = unitType;
       }
+      if (title !== undefined) unit.title = title;
       if (listingType !== undefined) unit.listingType = listingType;
       if (specifications !== undefined) unit.specifications = typeof specifications === 'string' ? JSON.parse(specifications) : specifications;
       if (bedsPerRoom !== undefined) unit.bedsPerRoom = bedsPerRoom;
@@ -136,10 +180,14 @@ const editUnit = async (req, res, next) => {
       if (address !== undefined) unit.address = typeof address === 'string' ? JSON.parse(address) : address;
       if (price !== undefined) unit.price = price;
       if (description !== undefined) unit.description = description;
-      if (isActive !== undefined) unit.isActive = (isActive === 'true' || isActive === true);
-      if (req.files && req.files.length > 0) {
-        unit.images = req.files.map(f => f.filename);
+      if (isActive !== undefined) {
+        unit.isActive = (isActive === 'true' || isActive === true);
+        if (!unit.isActive) {
+          unit.isFeatured = false;
+          unit.featureRequestStatus = 'none';
+        }
       }
+      unit.images = getUpdatedImages();
 
       if (needsReApproval) {
         unit.status = 'pending';
@@ -151,6 +199,8 @@ const editUnit = async (req, res, next) => {
           reason: 'Critical fields edited, re-approval required',
           previousData: { status: previousData.status, price: previousData.price, unitType: previousData.unitType }
         });
+
+        await notifyAdmins(req.app, 'admin_request', `Unit updated, requires re-approval: ${unit.title}`, unit._id);
       }
     }
 
@@ -175,7 +225,9 @@ const deleteUnit = async (req, res, next) => {
 
     unit.isDeleted = true;
     unit.isActive = false;
-    await unit.save();
+    unit.isFeatured = false;
+    unit.featureRequestStatus = 'none';
+    await unit.save({ validateModifiedOnly: true });
 
     await AuditLog.create({
       performedBy: req.user._id,
@@ -220,7 +272,7 @@ const updateUnitStatus = async (req, res, next) => {
 
     unit.status = status;
     if (tenantId) unit.tenantId = tenantId;
-    await unit.save();
+    await unit.save({ validateModifiedOnly: true });
 
     await AuditLog.create({
       performedBy: req.user._id,
@@ -282,7 +334,7 @@ const rateUnit = async (req, res, next) => {
 
     unit.rating = Math.round(newRating * 10) / 10;
     unit.reviewsCount = newReviewsCount;
-    await unit.save();
+    await unit.save({ validateModifiedOnly: true });
 
     res.json({
       success: true,

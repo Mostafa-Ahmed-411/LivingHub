@@ -5,7 +5,7 @@ const ownerDashboardController = require('../controllers/ownerDashboardControlle
 
 const router = express.Router();
 
-router.use(auth, checkRole('owner'));
+router.use(auth, checkRole('owner', 'admin'));
 
 router.get('/stats', ownerDashboardController.getDashboardStats);
 router.get('/units', ownerDashboardController.getMyUnits);

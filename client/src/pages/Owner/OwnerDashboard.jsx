@@ -24,7 +24,7 @@ export default function OwnerDashboard({ onNavigate }) {
     { id: "dashboard", label: "Dashboard", icon: BarChart2, badge: 0 },
     { id: "add-unit", label: "Add Unit", icon: Plus, badge: 0 },
     { id: "my-units", label: "My Units", icon: Building2, badge: 0 },
-    { id: "analytics", label: "Analytics", icon: TrendingUp, badge: 0 },
+    // { id: "analytics", label: "Analytics", icon: TrendingUp, badge: 0 },
     { id: "income", label: "Income", icon: DollarSign, badge: 0 },
     { id: "chats", label: "Messages", icon: MessageSquare, badge: 2 },
     { id: "profile", label: "Profile", icon: User, badge: 0 },

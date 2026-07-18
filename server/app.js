@@ -20,11 +20,17 @@ const userDashboardRoutes = require("./routes/userDashboardRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const ownerUnitRoutes = require("./routes/ownerUnitRoutes");
+const unlockRoutes = require("./routes/unlockRoutes");
 
 const app = express();
 
 // Security & Parsing middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false,
+  })
+);
 app.use(
     cors({
         origin: [
@@ -42,6 +48,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.originalUrl}`);
+  console.log('[BODY]', req.body);
+  console.log('[QUERY]', req.query);
+  next();
+});
+
 // Static folder for uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -55,6 +68,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/user/dashboard", userDashboardRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/unlock", unlockRoutes);
 
 // Catch unhandled routes
 app.all("*", (req, res, next) => {

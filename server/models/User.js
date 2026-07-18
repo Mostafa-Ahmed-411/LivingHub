@@ -93,7 +93,20 @@ const userSchema = new mongoose.Schema({
   isFlagged: {
     type: Boolean,
     default: false
-  }
+  },
+  freeUnlocksUsed: {
+    type: Number,
+    default: 0
+  },
+  paidUnlocksRemaining: {
+    type: Number,
+    default: 0
+  },
+  paidUnlocksExpiresAt: Date,
+  unlockedUnits: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Unit'
+  }]
 }, { timestamps: true });
 
 // ضمان بناء الـ fullName دائماً لتخطي شرط الـ Validation بنجاح

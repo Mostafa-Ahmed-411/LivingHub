@@ -25,6 +25,7 @@ import AdminPending from "./pages/Admin/AdminPending";
 import AdminUsers from "./pages/Admin/AdminUsers";
 import AdminAds from "./pages/Admin/AdminAds";
 import AdminAuditLogs from "./pages/Admin/AdminAuditLogs";
+import AdminReports from "./pages/Admin/AdminReports";
 import UnitFormPage from "./pages/UnitFormPage";
 import UnitDetailPage from "./pages/UnitDetailPage";
 import ChatPage from "./pages/ChatPage";
@@ -78,6 +79,15 @@ function DemoNav({ current }) {
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   const handleNavigate = (path, state = null) => {
     const routeMap = {
@@ -153,10 +163,12 @@ export default function App() {
             <Route path="pending" element={<AdminPending />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="units" element={<OwnerListings onNavigate={handleNavigate} />} />
+            <Route path="add-unit" element={<UnitFormPage onNavigate={handleNavigate} embedded={true} />} />
             <Route path="payments" element={<PaymentsPage />} />
             <Route path="ads" element={<AdminAds />} />
-            <Route path="reports" element={<OwnerAnalytics />} />
+            <Route path="reports" element={<AdminReports />} />
             <Route path="audit" element={<AdminAuditLogs />} />
+            <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<SettingsPage isAdmin={true} />} />
           </Route>
         </Route>
@@ -214,7 +226,7 @@ export default function App() {
           }
         />
       </Routes>
-      <DemoNav current={location.pathname} />
+      {/* <DemoNav current={location.pathname} /> */}
     </div>
   );
 }

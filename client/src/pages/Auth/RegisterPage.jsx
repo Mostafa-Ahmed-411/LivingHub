@@ -5,7 +5,7 @@ import useAuth from "../../hooks/useAuth";
 import Inp from "../../components/common/Inp";
 import Sel from "../../components/common/Sel";
 import Btn from "../../components/common/Btn";
-import { cities } from "../../data/mockData";
+import { cities } from "../../constants/staticData";
 
 export default function RegisterPage() {
   const { signup } = useAuth();

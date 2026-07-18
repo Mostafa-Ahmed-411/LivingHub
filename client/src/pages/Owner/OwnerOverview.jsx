@@ -11,11 +11,12 @@ export default function OwnerOverview() {
   const [bookings, setBookings] = useState([]);
   
   // داتا وهمية لطلبات الصيانة المرفوعة من الطلاب لتشغيل الشاشة فوراً
-  const [maintenanceRequests, setMaintenanceRequests] = useState([
-    { id: 1, tenant: "عمرو طارق", property: "شقة رقم 4 - برج الأبطال", issue: "عطل في السباكة بالحمام الرئيسي", date: "2026-07-12", status: "Pending" },
-    { id: 2, tenant: "أحمد رامي", property: "غرفة مشتركة ب - جناح أ", issue: "تكييف الغرفة لا يبرد ويصدر صوتاً", date: "2026-07-10", status: "In Progress" },
-    { id: 3, tenant: "محمود حسن", property: "استوديو ريفير فيو", issue: "مفتاح الكهرباء الرئيسي يفصل تلقائياً", date: "2026-07-09", status: "Resolved" }
-  ]);
+  // const [maintenanceRequests, setMaintenanceRequests] = useState([
+  //   { id: 1, tenant: "عمرو طارق", property: "شقة رقم 4 - برج الأبطال", issue: "عطل في السباكة بالحمام الرئيسي", date: "2026-07-12", status: "Pending" },
+  //   { id: 2, tenant: "أحمد رامي", property: "غرفة مشتركة ب - جناح أ", issue: "تكييف الغرفة لا يبرد ويصدر صوتاً", date: "2026-07-10", status: "In Progress" },
+  //   { id: 3, tenant: "محمود حسن", property: "استوديو ريفير فيو", issue: "مفتاح الكهرباء الرئيسي يفصل تلقائياً", date: "2026-07-09", status: "Resolved" }
+  // ]);
+  const [maintenanceRequests, setMaintenanceRequests] = useState([]);
 
   // تصفير العدادات والاشتراكات بالكامل لتكون جاهزة على الشغل الفعلي
   const [counters, setCounters] = useState({
@@ -108,6 +109,9 @@ export default function OwnerOverview() {
             ...prev,
             ...data.stats
           }));
+          if (data.stats.unitBreakdown) {
+            setUnitBreakdown(data.stats.unitBreakdown);
+          }
         }
       })
       .catch((err) => {

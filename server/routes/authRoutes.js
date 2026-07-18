@@ -52,11 +52,11 @@ const signupValidation = [
     .matches(/\d/).withMessage('Password must contain at least one number'),
   body('role')
     .notEmpty().withMessage('Role is required')
-    .isIn(['student', 'owner', 'user']).withMessage('Role must be student, user, or owner'),
+    .isIn(['student', 'owner', 'admin']).withMessage('Role must be student, user, or owner'),
   body('gender')
     .notEmpty().withMessage('Gender is required')
     .isIn(['Male', 'Female']).withMessage('Gender must be Male or Female'),
-  body('governorate')
+  body('governorate') 
     .trim()
     .notEmpty().withMessage('Governorate is required'),
   body('dateOfBirth')

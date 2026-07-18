@@ -1,6 +1,7 @@
 const Unit = require('../models/Unit');
 const AppError = require('../utils/AppError');
 const AuditLog = require('../models/AuditLog');
+const { notifyAdmins } = require('../utils/notifications');
 
 const requestFeature = async (req, res, next) => {
   try {
@@ -28,9 +29,20 @@ const requestFeature = async (req, res, next) => {
       throw new AppError('This unit is already featured', 400);
     }
 
+    // Check global featured slots cap (max 20)
+    const currentFeaturedCount = await Unit.countDocuments({
+      isFeatured: true,
+      featuredUntil: { $gt: new Date() },
+      isActive: true,
+      isDeleted: { $ne: true }
+    });
+    if (currentFeaturedCount >= 20) {
+      throw new AppError('Featured slots are currently full (20/20). Please try again in a few days.', 400);
+    }
+
     unit.featureRequestStatus = 'pending';
     unit.featureRequestedAt = new Date();
-    await unit.save();
+    await unit.save({ validateModifiedOnly: true });
 
     await AuditLog.create({
       performedBy: req.user._id,
@@ -40,10 +52,15 @@ const requestFeature = async (req, res, next) => {
       reason: 'Feature request submitted'
     });
 
+    await notifyAdmins(req.app, 'admin_request', `New feature request for unit: ${unit.title}`, unit._id);
+
     res.json({ success: true, message: 'Feature request submitted successfully', unit });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { requestFeature };
+module.exports = {
+  requestFeature
+};
+

@@ -4,6 +4,7 @@ import Sel from "../components/common/Sel";
 import Inp from "../components/common/Inp";
 import Btn from "../components/common/Btn";
 import Badge from "../components/common/Badge";
+import api from "../api/client";
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState([]);
@@ -17,16 +18,10 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     // جلب سجل المدفوعات الحقيقي من الباك إيند
-    fetch("/api/user/dashboard/payments") // استبدله بمسار الـ API الحقيقي للمدفوعات لديك لاحقاً
+    api.get("/user/dashboard/payments")
       .then((res) => {
-        if (!res.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return res.json();
-      })
-      .then((data) => {
         // السيرفر يرجع قائمة المدفوعات
-        setPayments(data.payments || []);
+        setPayments(res.data.payments || []);
         setLoading(false);
       })
       .catch((err) => {

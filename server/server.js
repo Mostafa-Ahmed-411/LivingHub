@@ -45,6 +45,7 @@ const io = new Server(server, {
 });
 
 // Setup chat sockets
+app.set("io", io);
 chatSocket(io);
 
 // Start Server

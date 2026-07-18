@@ -11,7 +11,7 @@ import {
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import Btn from "../components/common/Btn";
-import { communityPosts } from "../data/mockData";
+import { communityPosts } from "../constants/staticData";
 
 export default function CommunityPage({ onNavigate }) {
   const [posts, setPosts] = useState(communityPosts);

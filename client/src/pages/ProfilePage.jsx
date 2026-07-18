@@ -4,7 +4,7 @@ import Badge from "../components/common/Badge";
 import Inp from "../components/common/Inp";
 import Sel from "../components/common/Sel";
 import Btn from "../components/common/Btn";
-import { cities } from "../data/mockData";
+import { cities } from "../constants/staticData";
 import { AuthContext } from "../context/AuthContext"; 
 import api from "../api/client"; 
 

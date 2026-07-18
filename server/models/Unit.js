@@ -7,6 +7,10 @@ const unitSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  title: {
+    type: String,
+    required: true
+  },
   unitType: {
     type: String,
     enum: UNIT_TYPES,
@@ -85,7 +89,11 @@ const unitSchema = new mongoose.Schema({
   },
   featureRequestedAt: Date,
   featuredAt: Date,
-  featuredUntil: Date
+  featuredUntil: Date,
+  views: {
+    type: Number,
+    default: 0
+  }
 }, { timestamps: true });
 
 unitSchema.set('toJSON', {

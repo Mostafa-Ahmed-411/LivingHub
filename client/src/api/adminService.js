@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "./client";
 
 // جلب إحصائيات لوحة تحكم الأدمن
 export const getAdminStats = async () => {
@@ -128,6 +128,146 @@ export const flagUser = async (id) => {
     return response.data;
   } catch (error) {
     console.error("Error flagging user:", error);
+    throw error;
+  }
+};
+
+// جلب المدفوعات المعلقة
+export const getPendingPayments = async () => {
+  try {
+    const response = await api.get("/admin/pendings");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pending payments:", error);
+    throw error;
+  }
+};
+
+// قبول الدفع
+export const approvePaymentAPI = async (id) => {
+  try {
+    const response = await api.post(`/admin/payments/${id}/approve`);
+    return response.data;
+  } catch (error) {
+    console.error("Error approving payment:", error);
+    throw error;
+  }
+};
+
+// رفض الدفع
+export const rejectPaymentAPI = async (id, reason) => {
+  try {
+    const response = await api.post(`/admin/payments/${id}/reject`, { reason });
+    return response.data;
+  } catch (error) {
+    console.error("Error rejecting payment:", error);
+    throw error;
+  }
+};
+
+// جلب سجلات المراجعة
+export const getAuditLogs = async (params = {}) => {
+  try {
+    const response = await api.get("/admin/audit-logs", { params });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    throw error;
+  }
+};
+
+// جلب البلاغات
+export const getReports = async (params = {}) => {
+  try {
+    const response = await api.get("/admin/reports", { params });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    throw error;
+  }
+};
+
+// حل بلاغ
+export const resolveReport = async (id, resolution) => {
+  try {
+    const response = await api.patch(`/admin/reports/${id}/resolve`, { resolution });
+    return response.data;
+  } catch (error) {
+    console.error("Error resolving report:", error);
+    throw error;
+  }
+};
+
+// رفض بلاغ
+export const dismissReport = async (id) => {
+  try {
+    const response = await api.patch(`/admin/reports/${id}/dismiss`);
+    return response.data;
+  } catch (error) {
+    console.error("Error dismissing report:", error);
+    throw error;
+  }
+};
+
+// جلب الإعلانات للأدمن
+export const getAds = async () => {
+  try {
+    const response = await api.get("/admin/ads");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching ads:", error);
+    throw error;
+  }
+};
+
+// إنشاء إعلان جديد
+export const createAd = async (formData) => {
+  try {
+    const response = await api.post("/admin/ads", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating ad:", error);
+    throw error;
+  }
+};
+
+// تحديث إعلان
+export const updateAd = async (id, formData) => {
+  try {
+    const response = await api.patch(`/admin/ads/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating ad:", error);
+    throw error;
+  }
+};
+
+// حذف إعلان
+export const deleteAd = async (id) => {
+  try {
+    const response = await api.delete(`/admin/ads/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting ad:", error);
+    throw error;
+  }
+};
+
+// تفعيل/تعطيل الإعلان
+export const toggleAdStatus = async (id) => {
+  try {
+    const response = await api.post(`/admin/ads/${id}/toggle`);
+    return response.data;
+  } catch (error) {
+    console.error("Error toggling ad status:", error);
     throw error;
   }
 };
